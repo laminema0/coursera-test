@@ -37,4 +37,5 @@ SWIFT
 echo "== Core package"
 docker run --rm -v "$ROOT/Packages/Core":/src -w /src "$IMAGE" bash -c 'swift test --scratch-path /tmp/build'
 echo "== App (non-UI code): $(ls "$WORK/Sources/MyApp" | wc -l) files"
-docker run --rm -v "$WORK":/src -w /src "$IMAGE" swift test
+# Build output stays inside the container (--scratch-path), so no root-owned files are left behind.
+docker run --rm -v "$WORK":/src -w /src "$IMAGE" swift test --scratch-path /tmp/build

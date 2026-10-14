@@ -7,7 +7,7 @@ struct NewsTab: View {
     let router: Router
 
     var body: some View {
-        NewsTabStack(store: EventsStore(repository: container.eventsRepository), router: router)
+        NewsTabStack(store: EventsStore(repository: container.eventsRepository, cache: container.eventsCache), router: router)
     }
 }
 
@@ -55,10 +55,12 @@ struct EventsListView: View {
                         }
                 }
             }
-            .task { await store.loadIfNeeded() }
             .task(id: scenePhase) {
-                // Refresh every minute while the list is on screen and the app is active.
+                // Cached stories first, then fresh ones; refresh on return to the foreground
+                // and every minute while the list is on screen.
                 guard scenePhase == .active else { return }
+                await store.loadIfNeeded()
+                await store.refreshIfStale(maxAge: 30)
                 await store.autoRefresh(every: .seconds(60))
             }
     }
@@ -89,12 +91,15 @@ struct EventsListView: View {
 private struct EventsList: View {
     @Environment(EventsStore.self) private var store
     @Binding var filter: VerificationStatus?
+    @State private var manualRefreshes = 0
 
     var body: some View {
         let sections = store.sections(filter: filter)
         List {
             if let error = store.lastError {
-                RefreshErrorRow(message: error)
+                RefreshErrorRow(message: error, lastUpdated: store.lastUpdated)
+            } else if store.isShowingCachedEvents {
+                CachedEventsRow()
             }
             ForEach(sections) { section in
                 Section {
@@ -118,7 +123,13 @@ private struct EventsList: View {
         .safeAreaInset(edge: .top, spacing: 0) {
             StatusFilterBar(selection: $filter)
         }
-        .refreshable { await store.refresh() }
+        .refreshable {
+            await store.refresh()
+            manualRefreshes += 1
+        }
+        .sensoryFeedback(trigger: manualRefreshes) { _, _ in
+            store.lastError == nil ? .success : .error
+        }
     }
 }
 
@@ -140,17 +151,34 @@ private struct StatusSectionHeader: View {
     }
 }
 
+/// Offline or server problem while stories are on screen: keep them and say how old they are.
 private struct RefreshErrorRow: View {
     let message: String
+    let lastUpdated: Date?
 
     var body: some View {
         Label {
-            Text("Couldn't refresh. \(message)")
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Couldn't refresh. \(message)")
+                if let lastUpdated {
+                    Text("Showing stories from \(lastUpdated, format: .relative(presentation: .named)).")
+                        .foregroundStyle(Color.dsTextSecondary)
+                }
+            }
         } icon: {
-            Image(systemName: "exclamationmark.triangle.fill")
+            Image(systemName: "wifi.exclamationmark")
                 .foregroundStyle(Color.dsWarning)
         }
         .font(.dsCaption)
+        .accessibilityElement(children: .combine)
+    }
+}
+
+private struct CachedEventsRow: View {
+    var body: some View {
+        Label("Showing saved stories while new ones load…", systemImage: "clock.arrow.circlepath")
+            .font(.dsCaption)
+            .foregroundStyle(Color.dsTextSecondary)
     }
 }
 

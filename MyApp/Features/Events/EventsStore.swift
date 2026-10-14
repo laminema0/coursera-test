@@ -30,13 +30,21 @@ final class EventsStore {
     private(set) var lastError: String?
     private(set) var isLoading = false
     private(set) var hasLoaded = false
+    /// When this device last fetched successfully (local clock), for "refresh if stale".
+    private(set) var lastFetchedAt: Date?
+    /// True while the list shows the cached copy from an earlier session.
+    private(set) var isShowingCachedEvents = false
     /// Sent to the server. The list screen filters locally instead, so its counts stay complete.
     var statusFilter: VerificationStatus?
 
     private let repository: EventsRepository
+    private let cache: EventsCaching?
+    private let now: @Sendable () -> Date
 
-    init(repository: EventsRepository) {
+    init(repository: EventsRepository, cache: EventsCaching? = nil, now: @escaping @Sendable () -> Date = { .now }) {
         self.repository = repository
+        self.cache = cache
+        self.now = now
     }
 
     var phase: Phase {
@@ -73,9 +81,20 @@ final class EventsStore {
         events.first { $0.id == id }
     }
 
-    /// Loads once; later calls do nothing until `refresh()`.
+    /// Shows the cached copy at once, then loads fresh events. Later calls do nothing until `refresh()`.
     func loadIfNeeded() async {
         guard !hasLoaded else { return }
+        if events.isEmpty, let cached = cache?.load() {
+            events = cached.events
+            lastUpdated = cached.generatedAt
+            isShowingCachedEvents = true
+        }
+        await refresh()
+    }
+
+    /// Refreshes when the last successful fetch is older than `maxAge` seconds (e.g. back from the background).
+    func refreshIfStale(maxAge: TimeInterval) async {
+        if let lastFetchedAt, now().timeIntervalSince(lastFetchedAt) < maxAge { return }
         await refresh()
     }
 
@@ -88,8 +107,13 @@ final class EventsStore {
             let response = try await repository.fetchEvents(status: statusFilter)
             events = response.events
             lastUpdated = response.generatedAt
+            lastFetchedAt = now()
             lastError = nil
             hasLoaded = true
+            isShowingCachedEvents = false
+            if statusFilter == nil {
+                cache?.save(response)
+            }
         } catch is CancellationError {
             return
         } catch let error as APIError {

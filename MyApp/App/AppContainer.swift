@@ -14,6 +14,7 @@ final class AppContainer {
     let feedRepository: FeedRepository
     let eventsRepository: EventsRepository
     let sourcesRepository: SourcesRepository
+    let eventsCache: EventsCaching
 
     init(
         configuration: AppConfiguration,
@@ -21,7 +22,8 @@ final class AppContainer {
         keyValueStore: KeyValueStore,
         feedRepository: FeedRepository,
         eventsRepository: EventsRepository,
-        sourcesRepository: SourcesRepository
+        sourcesRepository: SourcesRepository,
+        eventsCache: EventsCaching
     ) {
         self.configuration = configuration
         self.apiClient = apiClient
@@ -29,6 +31,7 @@ final class AppContainer {
         self.feedRepository = feedRepository
         self.eventsRepository = eventsRepository
         self.sourcesRepository = sourcesRepository
+        self.eventsCache = eventsCache
     }
 
     static func live(configuration: AppConfiguration = .current) -> AppContainer {
@@ -48,7 +51,8 @@ final class AppContainer {
             keyValueStore: UserDefaultsStore(),
             feedRepository: feedRepository,
             eventsRepository: eventsRepository,
-            sourcesRepository: sourcesRepository
+            sourcesRepository: sourcesRepository,
+            eventsCache: FileEventsCache.standard()
         )
     }
 
@@ -61,7 +65,8 @@ final class AppContainer {
             keyValueStore: InMemoryKeyValueStore(),
             feedRepository: MockFeedRepository(delay: .zero),
             eventsRepository: MockEventsRepository(delay: .zero),
-            sourcesRepository: MockSourcesRepository()
+            sourcesRepository: MockSourcesRepository(),
+            eventsCache: InMemoryEventsCache()
         )
     }
 }

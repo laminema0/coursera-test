@@ -1,14 +1,15 @@
 import Foundation
 
-// Mirrors GET /v1/events (backend/src/events-api.ts).
+// Mirrors GET /v1/events (backend/src/events-api.ts). Codable so the last response can be cached on disk;
+// the cache writes the same snake_case JSON the API sends.
 
-struct EventsResponse: Decodable, Equatable, Sendable {
+struct EventsResponse: Codable, Equatable, Sendable {
     let generatedAt: Date
     let events: [NewsEvent]
 }
 
 /// One real-world incident, with every independent source that reported it.
-struct NewsEvent: Identifiable, Decodable, Hashable, Sendable {
+struct NewsEvent: Identifiable, Codable, Hashable, Sendable {
     let id: String
     let title: String
     let firstSeenAt: Date
@@ -33,26 +34,26 @@ struct NewsEvent: Identifiable, Decodable, Hashable, Sendable {
     let origins: [EventOrigin]
 }
 
-struct StatusChange: Decodable, Hashable, Sendable {
+struct StatusChange: Codable, Hashable, Sendable {
     let status: VerificationStatus
     let at: Date
     let confirming: Int
 }
 
-struct FirstReport: Decodable, Hashable, Sendable {
+struct FirstReport: Codable, Hashable, Sendable {
     let sourceId: String
     let sourceName: String
     let at: Date
 }
 
-struct Coverage: Decodable, Hashable, Sendable {
+struct Coverage: Codable, Hashable, Sendable {
     let outlets: Int
     let countries: Int
     let firstSeenAt: Date?
     let checkedAt: Date
 }
 
-enum VerificationStatus: String, Decodable, Hashable, Sendable, CaseIterable {
+enum VerificationStatus: String, Codable, Hashable, Sendable, CaseIterable {
     case unverified, reported, corroborated, confirmed, disputed, retracted
 
     /// Unknown values from a newer backend are shown as unverified (the safe choice).
@@ -62,7 +63,7 @@ enum VerificationStatus: String, Decodable, Hashable, Sendable, CaseIterable {
     }
 }
 
-struct Verification: Decodable, Hashable, Sendable {
+struct Verification: Codable, Hashable, Sendable {
     let status: VerificationStatus
     /// Plain-language reason, e.g. "4 independent sources report it, 2 with strong editorial standards."
     let reason: String
@@ -75,7 +76,7 @@ struct Verification: Decodable, Hashable, Sendable {
     let stateMediaOwnCountry: Int
 }
 
-enum CountKind: String, Decodable, Hashable, Sendable {
+enum CountKind: String, Codable, Hashable, Sendable {
     case killed, injured, missing, arrested, evacuated, displaced, magnitude, unknown
 
     init(from decoder: Decoder) throws {
@@ -84,20 +85,20 @@ enum CountKind: String, Decodable, Hashable, Sendable {
     }
 }
 
-struct NumberSummary: Decodable, Hashable, Sendable {
-    struct MostReported: Decodable, Hashable, Sendable {
+struct NumberSummary: Codable, Hashable, Sendable {
+    struct MostReported: Codable, Hashable, Sendable {
         let value: Double
         /// How many independent sources report this value as their latest.
         let origins: Int
     }
 
-    struct Official: Decodable, Hashable, Sendable {
+    struct Official: Codable, Hashable, Sendable {
         let value: Double
         let at: Date
         let sourceId: String
     }
 
-    struct Report: Decodable, Hashable, Sendable {
+    struct Report: Codable, Hashable, Sendable {
         let value: Double
         let qualifier: String
         let attribution: String
@@ -118,17 +119,17 @@ struct NumberSummary: Decodable, Hashable, Sendable {
     var isRange: Bool { min != max }
 }
 
-struct ChatterValue: Decodable, Hashable, Sendable {
+struct ChatterValue: Codable, Hashable, Sendable {
     let value: Double
     let mentions: Int
 }
 
-struct ChatterOnly: Decodable, Hashable, Sendable {
+struct ChatterOnly: Codable, Hashable, Sendable {
     let kind: CountKind
     let values: [ChatterValue]
 }
 
-struct StatementSummary: Decodable, Hashable, Sendable {
+struct StatementSummary: Codable, Hashable, Sendable {
     let speaker: String
     let asserts: Int
     let denies: Int
@@ -136,12 +137,12 @@ struct StatementSummary: Decodable, Hashable, Sendable {
 }
 
 /// One independent origin (an outlet, a wire agency, an official body, or social signals).
-struct EventOrigin: Decodable, Hashable, Sendable {
-    enum Kind: String, Decodable, Hashable, Sendable {
+struct EventOrigin: Codable, Hashable, Sendable {
+    enum Kind: String, Codable, Hashable, Sendable {
         case primary, wire, outlet, signal
     }
 
-    struct Article: Identifiable, Decodable, Hashable, Sendable {
+    struct Article: Identifiable, Codable, Hashable, Sendable {
         let id: String
         let title: String
         let url: URL

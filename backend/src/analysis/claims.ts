@@ -95,6 +95,9 @@ const EVACUATION_PATTERNS = [
   new RegExp(String.raw`\bforc(?:ed|es|ing)\s+${QUAL}${NUM}\s+${WHO}to\s+(?:flee|evacuate)\b`, "gi"),
 ];
 
+const HAS_NUMBER = new RegExp(String.raw`\d|\b(?:${Object.keys(WORD_NUMBERS).join("|")})\b`, "i");
+const HAS_OUTCOME = /kill|dead|died|dies|death|drown|injur|wound|hurt|missing|unaccounted|arrest|detain|custody|evacuat|displac|homeless/i;
+
 // Background ("including one in 2016 that killed 42 people") and corrected figures ("An earlier version said two died")
 // are not the event's numbers.
 const BACKGROUND_CLAUSE = /\b(?:in|since|of)\s+(?:19|20)\d{2}\b|\byears? ago\b|\blast year\b/i;
@@ -157,20 +160,25 @@ export function extractClaims(title: string, summary?: string): ArticleClaims {
       numbers.push(claim);
     };
 
-    for (const m of sentence.matchAll(COUNT_PATTERN)) {
-      const kind = outcomeKind(m[3]!);
-      if (kind) add(kind, m[2]!, m[1], m);
-    }
-    for (const pattern of TOLL_PATTERNS) for (const m of sentence.matchAll(pattern)) add("killed", m[2]!, m[1], m);
-    for (const pattern of [VERB_COUNT_PATTERN, PAST_VERB_COUNT_PATTERN, PERFECT_VERB_COUNT_PATTERN, CLAUSE_END_VERB_COUNT_PATTERN]) {
-      for (const m of sentence.matchAll(pattern)) {
-        const kind = VERB_KINDS.find(([verb]) => verb.test(m[1]!))?.[1];
-        if (kind) add(kind, m[3]!, m[2], m);
+    // Cheap keyword checks first: most sentences have no figure, and the full patterns are costly at 20k articles.
+    if (HAS_NUMBER.test(sentence)) {
+      if (HAS_OUTCOME.test(sentence)) {
+        for (const m of sentence.matchAll(COUNT_PATTERN)) {
+          const kind = outcomeKind(m[3]!);
+          if (kind) add(kind, m[2]!, m[1], m);
+        }
+        for (const pattern of [VERB_COUNT_PATTERN, PAST_VERB_COUNT_PATTERN, PERFECT_VERB_COUNT_PATTERN, CLAUSE_END_VERB_COUNT_PATTERN]) {
+          for (const m of sentence.matchAll(pattern)) {
+            const kind = VERB_KINDS.find(([verb]) => verb.test(m[1]!))?.[1];
+            if (kind) add(kind, m[3]!, m[2], m);
+          }
+        }
       }
+      if (/toll/i.test(sentence)) for (const pattern of TOLL_PATTERNS) for (const m of sentence.matchAll(pattern)) add("killed", m[2]!, m[1], m);
+      if (/evacuat|flee/i.test(sentence)) for (const pattern of EVACUATION_PATTERNS) for (const m of sentence.matchAll(pattern)) add("evacuated", m[2]!, m[1], m);
+      if (/lives/i.test(sentence)) for (const m of sentence.matchAll(LIVES_PATTERN)) add("killed", m[2] ?? m[4]!, m[1] ?? m[3], m);
+      if (/\d\.\d|magnitude/i.test(sentence)) for (const m of sentence.matchAll(MAGNITUDE_PATTERN)) add("magnitude", m[1] ?? m[2] ?? m[3]!, undefined, m);
     }
-    for (const pattern of EVACUATION_PATTERNS) for (const m of sentence.matchAll(pattern)) add("evacuated", m[2]!, m[1], m);
-    for (const m of sentence.matchAll(LIVES_PATTERN)) add("killed", m[2] ?? m[4]!, m[1] ?? m[3], m);
-    for (const m of sentence.matchAll(MAGNITUDE_PATTERN)) add("magnitude", m[1] ?? m[2] ?? m[3]!, undefined, m);
 
     for (const m of sentence.matchAll(STATEMENT_PATTERN)) {
       const speaker = cleanSpeaker(m[1]!);

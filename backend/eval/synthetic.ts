@@ -54,7 +54,7 @@ export function syntheticCorpus(total: number, sources: NewsSource[], seed = 42)
     if (random() < 0.4) {
       // One-off story: each has its own rare words, like real headlines about different things.
       const story = `${pick(SUBJECTS)} ${pick(VERBS)} ${pick(OBJECTS)}`;
-      add(`${place()} ${story} ${word()}`, `${place()} ${word()} said the ${story} was expected on ${pick(["Monday", "Tuesday", "Wednesday"])}.`, start + random() * spanMs);
+      add(`${place()} ${story} ${word()}`, `The ${word()} ${pick(OBJECTS)} in ${place()} follows ${word()} and ${word()}, ${pick(["sources", "a statement", "officials"])} said.`, start + random() * spanMs);
       continue;
     }
     // A small developing event: 2–12 articles over a few hours, sharing the event's own names.

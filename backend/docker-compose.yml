@@ -1,0 +1,56 @@
+# Production stack on one free VM.
+#   docker compose up -d --build                         # API only, on http://127.0.0.1:8787
+#   TUNNEL_TOKEN=... docker compose --profile tunnel up -d --build   # + Cloudflare Tunnel (HTTPS, no open ports)
+# In the Cloudflare dashboard, point the tunnel's public hostname at http://api:8787.
+services:
+  api:
+    build: .
+    image: news-verify:latest
+    restart: unless-stopped
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      DATA_DIR: /data
+      # cloudflared reaches the API over the compose network, so trust its CF-Connecting-IP from private addresses.
+      TRUST_PROXY: private
+    volumes:
+      - news-data:/data
+    ports:
+      - "127.0.0.1:8787:8787"
+    # Let a running collection cycle finish and the database close cleanly.
+    stop_grace_period: 60s
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    mem_limit: 768m
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  cloudflared:
+    profiles: ["tunnel"]
+    # Pin a specific release in production (see https://hub.docker.com/r/cloudflare/cloudflared/tags).
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run
+    environment:
+      # From Cloudflare Zero Trust → Networks → Tunnels. Export it, or put it in a .env file next to this compose file.
+      TUNNEL_TOKEN: ${TUNNEL_TOKEN:-}
+    depends_on:
+      api:
+        condition: service_healthy
+    security_opt:
+      - no-new-privileges:true
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "2"
+
+volumes:
+  news-data:

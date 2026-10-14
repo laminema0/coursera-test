@@ -1,115 +1,76 @@
-import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { type HistorySnapshot, StatusHistory } from "./analysis/history.ts";
-import { TrackRecord, type TrackRecordSnapshot } from "./analysis/track-record.ts";
-import { analyze } from "./analysis/verify.ts";
-import { DailyBudget } from "./budget.ts";
-import { type EventsResponse, toApiEvents } from "./events-api.ts";
-import { CoverageTracker } from "./sources/gdelt.ts";
+import { readFileSync } from "node:fs";
+import { NewsService } from "./app.ts";
 import { loadConfig } from "./config.ts";
-import { Ingestor } from "./ingest.ts";
-import { createApiServer } from "./server.ts";
-import { ArticleStore, type ArticleSnapshot } from "./sources/article-store.ts";
-import { Collector } from "./sources/collector.ts";
+import { createLogger } from "./log.ts";
+import { loadServiceConfig } from "./service-config.ts";
 import type { SourceList } from "./sources/types.ts";
-import { MemoryStore, type Snapshot } from "./store.ts";
-import { XClient } from "./x/client.ts";
+import { migrateJsonSnapshots } from "./storage/migrate.ts";
+import { SqliteStorage } from "./storage/sqlite.ts";
+import { MemoryStorage, type Storage } from "./storage/storage.ts";
 
-const config = loadConfig();
-const sourceList = JSON.parse(readFileSync(process.env.SOURCES_FILE ?? "sources/en.json", "utf8")) as SourceList;
-const dataDir = config.dataFile ? dirname(config.dataFile) : undefined;
+const service = loadServiceConfig();
+const log = createLogger({ level: service.logLevel });
 
-const articlesFile = dataDir ? join(dataDir, "articles.json") : undefined;
-const articles = articlesFile && existsSync(articlesFile)
-  ? ArticleStore.restore(JSON.parse(readFileSync(articlesFile, "utf8")) as ArticleSnapshot)
-  : new ArticleStore();
-const collector = new Collector({ sources: sourceList.sources, language: sourceList.language, store: articles });
-const sourceMap = new Map(sourceList.sources.map((s) => [s.id, s]));
-let latestEvents: EventsResponse | undefined;
-const trackRecordFile = dataDir ? join(dataDir, "track-record.json") : undefined;
-const trackRecord = trackRecordFile && existsSync(trackRecordFile)
-  ? TrackRecord.restore(JSON.parse(readFileSync(trackRecordFile, "utf8")) as TrackRecordSnapshot)
-  : new TrackRecord();
-const historyFile = dataDir ? join(dataDir, "status-history.json") : undefined;
-const statusHistory = historyFile && existsSync(historyFile)
-  ? StatusHistory.restore(JSON.parse(readFileSync(historyFile, "utf8")) as HistorySnapshot)
-  : new StatusHistory();
-const coverage = new CoverageTracker();
-const GDELT_ENABLED = process.env.GDELT !== "off";
+let storage: Storage | undefined;
+let app: NewsService | undefined;
 
-async function analyzeNow(): Promise<void> {
-  const started = Date.now();
-  const all = [...articles.articles.values()];
-  const events = analyze(all, sourceMap);
-  if (statusHistory.record(events, new Date())) save(historyFile, statusHistory.snapshot());
-  const publish = () => {
-    latestEvents = toApiEvents(events, articles.articles, sourceMap, new Date(), (id) => coverage.get(id), (id) => statusHistory.get(id));
-  };
-  publish();
-  if (trackRecord.update(events, new Date()) > 0) save(trackRecordFile, trackRecord.snapshot());
-  const byStatus = events.reduce<Record<string, number>>((acc, e) => ({ ...acc, [e.verification.status]: (acc[e.verification.status] ?? 0) + 1 }), {});
-  console.log(`[analysis] ${all.length} articles → ${events.length} events in ${Date.now() - started} ms ${JSON.stringify(byStatus)}`);
-
-  if (GDELT_ENABLED) {
-    // Coverage for the newest multi-source events; GDELT allows about one request every 5 seconds.
-    coverage.retain(new Set(events.map((e) => e.id)));
-    const top = events.filter((e) => e.verification.confirming >= 2 || e.verification.signals > 0).slice(0, 5);
-    const checked = await coverage.refresh(top, 5);
-    if (checked > 0) {
-      publish();
-      console.log(`[gdelt] coverage updated for ${checked} events`);
-    }
+process.on("unhandledRejection", (reason) => log.error("unhandled promise rejection", { error: reason }));
+process.on("uncaughtException", (error) => {
+  // State may be inconsistent now: save nothing more, close the database cleanly and let the supervisor restart us.
+  log.error("uncaught exception; exiting", { error });
+  try {
+    storage?.close();
+  } finally {
+    process.exit(1);
   }
+});
+
+try {
+  const config = loadConfig();
+  const sourceList = JSON.parse(readFileSync(service.sourcesFile, "utf8")) as SourceList;
+
+  if (service.dbFile) {
+    storage = new SqliteStorage(service.dbFile);
+    migrateJsonSnapshots(storage, { dataDir: service.dataDir, xSnapshotFile: service.xSnapshotFile, log });
+  } else {
+    log.warn("no DATA_DIR / DATA_FILE / DB_FILE set: state is kept in memory only and lost on restart");
+    storage = new MemoryStorage();
+  }
+
+  app = new NewsService({
+    config,
+    service,
+    sourceList,
+    storage,
+    log,
+    onStuck: () => {
+      // The cycle hangs beyond any per-request timeout. Each cycle's state is committed atomically, so restarting is safe.
+      log.error("watchdog: exiting so the supervisor restarts the service");
+      try {
+        storage?.close();
+      } finally {
+        process.exit(1);
+      }
+    },
+  });
+  await app.start(config.port, process.env.HOST || undefined);
+} catch (error) {
+  log.error("startup failed", { error });
+  storage?.close();
+  process.exit(1);
 }
 
-// Optional, paid: X ingestion runs only when a token is configured.
-let xStore: MemoryStore | undefined;
-let ingestor: Ingestor | undefined;
-if (config.xBearerToken) {
-  xStore = config.dataFile && existsSync(config.dataFile)
-    ? MemoryStore.restore(JSON.parse(readFileSync(config.dataFile, "utf8")) as Snapshot)
-    : new MemoryStore();
-  ingestor = new Ingestor({
-    config,
-    client: new XClient({ bearerToken: config.xBearerToken, baseUrl: config.xApiBaseUrl }),
-    store: xStore,
-    budget: new DailyBudget(config.dailyBudgetUsd, config.prices, () => new Date(), xStore.budgetState),
-    log: (message) => console.log(`[x] ${message}`),
+let signals = 0;
+for (const signal of ["SIGTERM", "SIGINT"] as const) {
+  process.on(signal, () => {
+    signals += 1;
+    if (signals > 1) {
+      log.warn("second signal; exiting immediately", { signal });
+      process.exit(1);
+    }
+    void app!.stop(signal).then(() => process.exit(0), (error: unknown) => {
+      log.error("shutdown failed", { error });
+      process.exit(1);
+    });
   });
 }
-
-function save(file: string | undefined, data: unknown): void {
-  if (!file) return;
-  mkdirSync(dirname(file), { recursive: true });
-  writeFileSync(`${file}.tmp`, JSON.stringify(data));
-  renameSync(`${file}.tmp`, file);
-}
-
-let running = false;
-async function tick(): Promise<void> {
-  if (running) return;
-  running = true;
-  try {
-    const report = await collector.runCycle();
-    console.log(`[sources] attempted=${report.attempted} new=${report.newArticles} notModified=${report.notModified} failed=${report.failed.length} expired=${report.expired}`);
-    for (const f of report.failed) console.log(`[sources]   ${f.sourceId}: ${f.error}`);
-    save(articlesFile, articles.snapshot());
-    await analyzeNow();
-
-    if (ingestor && xStore) {
-      console.log(`[x] ${JSON.stringify(await ingestor.runCycle())}`);
-      save(config.dataFile, xStore.snapshot());
-    }
-  } catch (error) {
-    console.error("[tick] failed:", error);
-  } finally {
-    running = false;
-  }
-}
-
-createApiServer({ articles, sources: sourceList.sources, xStore, events: () => latestEvents, trackRecord }).listen(config.port, () => {
-  console.log(`API on http://localhost:${config.port}  (/v1/events, /v1/articles, /v1/sources${xStore ? ", /v1/feed" : ""})`);
-  console.log(`${sourceList.sources.length} free sources loaded; X integration ${xStore ? "ON" : "off"}`);
-});
-void tick();
-setInterval(() => void tick(), 60_000);

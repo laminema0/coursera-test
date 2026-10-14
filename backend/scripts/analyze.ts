@@ -1,19 +1,26 @@
-// Collects once from all free sources (or reuses ./data/articles.json) and prints verified events.
+// Collects once from all free sources (or reuses the service's database / ./data/articles.json) and prints verified events.
 // Usage: npm run analyze            (top 25)
 //        npm run analyze -- 50      (top 50)
 import { existsSync, readFileSync } from "node:fs";
 import { analyze, type VerifiedEvent } from "../src/analysis/verify.ts";
 import { ArticleStore, type ArticleSnapshot } from "../src/sources/article-store.ts";
 import { Collector } from "../src/sources/collector.ts";
+import { SqliteStorage } from "../src/storage/sqlite.ts";
 import type { SourceList } from "../src/sources/types.ts";
 
 const limit = Number(process.argv[2] ?? 25);
 const list = JSON.parse(readFileSync(process.env.SOURCES_FILE ?? "sources/en.json", "utf8")) as SourceList;
 const sources = new Map(list.sources.map((s) => [s.id, s]));
 const snapshotFile = "data/articles.json";
+const dbFile = process.env.DB_FILE ?? "data/news.db";
 
 let store: ArticleStore;
-if (existsSync(snapshotFile)) {
+if (existsSync(dbFile)) {
+  const db = new SqliteStorage(dbFile);
+  store = ArticleStore.restore(db.load().articles);
+  db.close();
+  console.log(`Using ${dbFile} (${store.articles.size} articles).`);
+} else if (existsSync(snapshotFile)) {
   store = ArticleStore.restore(JSON.parse(readFileSync(snapshotFile, "utf8")) as ArticleSnapshot);
   console.log(`Using ${snapshotFile} (${store.articles.size} articles). Delete it to collect fresh.`);
 } else {

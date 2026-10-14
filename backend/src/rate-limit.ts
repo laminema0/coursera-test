@@ -28,12 +28,34 @@ export class RateLimiter {
 }
 
 /**
- * Client address. Behind Cloudflare Tunnel all requests come from localhost, so the CF-Connecting-IP header
- * is trusted only then; a direct client can't spoof it.
+ * Client address. Behind Cloudflare Tunnel all requests come from the tunnel process, so the CF-Connecting-IP header
+ * (or X-Forwarded-For) is trusted only from there; a direct client can't spoof it.
+ * `trust`: "loopback" (cloudflared on the same host, default), "private" (cloudflared in another container on a
+ * private network, e.g. docker compose) or "none".
  */
-export function clientOf(request: IncomingMessage): string {
+export function clientOf(request: IncomingMessage, trust: "loopback" | "private" | "none" = "loopback"): string {
   const remote = request.socket.remoteAddress ?? "unknown";
-  const loopback = remote === "127.0.0.1" || remote === "::1" || remote === "::ffff:127.0.0.1";
-  const forwarded = request.headers["cf-connecting-ip"];
-  return loopback && typeof forwarded === "string" && forwarded ? forwarded : remote;
+  const trusted = trust === "loopback" ? isLoopback(remote) : trust === "private" ? isPrivate(remote) : false;
+  if (!trusted) return remote;
+  const cf = request.headers["cf-connecting-ip"];
+  if (typeof cf === "string" && cf) return cf.trim();
+  const xff = request.headers["x-forwarded-for"];
+  const first = typeof xff === "string" ? xff.split(",")[0]?.trim() : undefined;
+  return first || remote;
+}
+
+export function isLoopback(address: string): boolean {
+  return address === "::1" || /^(::ffff:)?127\./.test(address);
+}
+
+/** Loopback, RFC 1918, link-local and IPv6 unique-local addresses. */
+export function isPrivate(address: string): boolean {
+  if (isLoopback(address)) return true;
+  const v4 = address.replace(/^::ffff:/, "");
+  const m = v4.match(/^(\d+)\.(\d+)\.\d+\.\d+$/);
+  if (m) {
+    const [a, b] = [Number(m[1]), Number(m[2])];
+    return a === 10 || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168) || (a === 169 && b === 254);
+  }
+  return /^f[cd][0-9a-f]{2}:/i.test(address) || /^fe80:/i.test(address);
 }

@@ -56,6 +56,7 @@ npm start               # API on http://localhost:8787
 
 ## Tests
 ```bash
+scripts/swift-linux-check.sh   # no Mac needed: builds and tests all non-UI Swift code in Docker
 swift test --package-path Packages/Core
 xcodebuild test -project MyApp.xcodeproj -scheme MyApp -destination 'platform=iOS Simulator,name=iPhone 16'
 ```

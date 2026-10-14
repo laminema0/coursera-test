@@ -1,4 +1,7 @@
 import Foundation
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
 
 public enum APIError: Error, Equatable, Sendable {
     case invalidURL
@@ -11,15 +14,15 @@ public enum APIError: Error, Equatable, Sendable {
     public var userMessage: String {
         switch self {
         case .transport(.notConnectedToInternet), .transport(.networkConnectionLost):
-            return String(localized: "You appear to be offline. Check your connection and try again.")
+            return NSLocalizedString("You appear to be offline. Check your connection and try again.", comment: "Network error shown to the user")
         case .transport(.timedOut):
-            return String(localized: "The request timed out. Please try again.")
+            return NSLocalizedString("The request timed out. Please try again.", comment: "Network error shown to the user")
         case .httpStatus(let code, _) where code == 401:
-            return String(localized: "Your session has expired. Please sign in again.")
+            return NSLocalizedString("Your session has expired. Please sign in again.", comment: "Network error shown to the user")
         case .httpStatus(let code, _) where code >= 500:
-            return String(localized: "The server is having problems. Please try again later.")
+            return NSLocalizedString("The server is having problems. Please try again later.", comment: "Network error shown to the user")
         default:
-            return String(localized: "Something went wrong. Please try again.")
+            return NSLocalizedString("Something went wrong. Please try again.", comment: "Network error shown to the user")
         }
     }
 }

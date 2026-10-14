@@ -1,4 +1,7 @@
 import Foundation
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
 
 /// Intercepts URLSession requests in tests.
 final class MockURLProtocol: URLProtocol {

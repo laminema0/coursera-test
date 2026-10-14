@@ -25,6 +25,13 @@ jobs:
       - run: npm run typecheck
       - run: npm test
 
+  swift-linux:
+    name: Swift (non-UI code on Linux)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: scripts/swift-linux-check.sh
+
   packages:
     name: Core package tests
     runs-on: macos-15

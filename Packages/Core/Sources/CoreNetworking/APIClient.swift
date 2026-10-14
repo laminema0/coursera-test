@@ -1,5 +1,8 @@
 import CoreLogging
 import Foundation
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
 
 public protocol APIClientProtocol: Sendable {
     func send<Response: Decodable>(_ endpoint: Endpoint<Response>) async throws -> Response

@@ -1,4 +1,7 @@
 import Foundation
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
 
 /// A typed description of one API call. `Response` is the decoded body type.
 public struct Endpoint<Response: Decodable>: Sendable {

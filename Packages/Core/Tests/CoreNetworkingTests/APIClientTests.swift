@@ -1,5 +1,8 @@
 @testable import CoreNetworking
 import Foundation
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
 import Testing
 
 private struct User: Decodable, Equatable {

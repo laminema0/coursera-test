@@ -10,6 +10,7 @@ opt_in_rules:
   - first_where
   - modifier_order
   - sorted_imports
+analyzer_rules:
   - unused_import
 line_length:
   warning: 140

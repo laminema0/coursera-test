@@ -23,18 +23,7 @@ public struct Logger: Sendable {
         public static let `private` = Privacy()
     }
 
-    public struct Message: ExpressibleByStringInterpolation, Sendable {
-        public struct StringInterpolation: StringInterpolationProtocol {
-            var text = ""
-            public init(literalCapacity: Int, interpolationCount: Int) {}
-            public mutating func appendLiteral(_ literal: String) { text += literal }
-            public mutating func appendInterpolation<T>(_ value: T, privacy: Privacy = .private) { text += "\(value)" }
-        }
-
-        let text: String
-        public init(stringLiteral value: String) { text = value }
-        public init(stringInterpolation: StringInterpolation) { text = stringInterpolation.text }
-    }
+    public typealias Message = LogMessage
 
     private let label: String
 
@@ -49,5 +38,21 @@ public struct Logger: Sendable {
     private func write(_ level: String, _ message: Message) {
         FileHandle.standardError.write(Data("[\(label)] \(level): \(message.text)\n".utf8))
     }
+}
+
+public struct LogMessage: ExpressibleByStringInterpolation, Sendable {
+    public typealias StringInterpolation = LogInterpolation
+
+    let text: String
+    public init(stringLiteral value: String) { text = value }
+    public init(stringInterpolation: LogInterpolation) { text = stringInterpolation.text }
+}
+
+/// String interpolation for `Logger.Message`, accepting (and ignoring) `privacy:` like `os.Logger`.
+public struct LogInterpolation: StringInterpolationProtocol {
+    var text = ""
+    public init(literalCapacity: Int, interpolationCount: Int) {}
+    public mutating func appendLiteral(_ literal: String) { text += literal }
+    public mutating func appendInterpolation<T>(_ value: T, privacy: Logger.Privacy = .private) { text += "\(value)" }
 }
 #endif

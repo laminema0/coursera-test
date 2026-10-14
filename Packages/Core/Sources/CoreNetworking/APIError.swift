@@ -12,17 +12,20 @@ public enum APIError: Error, Equatable, Sendable {
 
     /// A short message that is safe to show to the user.
     public var userMessage: String {
+        let comment = "Network error shown to the user"
         switch self {
         case .transport(.notConnectedToInternet), .transport(.networkConnectionLost):
-            return NSLocalizedString("You appear to be offline. Check your connection and try again.", comment: "Network error shown to the user")
+            return NSLocalizedString(
+                "You appear to be offline. Check your connection and try again.", comment: comment
+            )
         case .transport(.timedOut):
-            return NSLocalizedString("The request timed out. Please try again.", comment: "Network error shown to the user")
+            return NSLocalizedString("The request timed out. Please try again.", comment: comment)
         case .httpStatus(let code, _) where code == 401:
-            return NSLocalizedString("Your session has expired. Please sign in again.", comment: "Network error shown to the user")
+            return NSLocalizedString("Your session has expired. Please sign in again.", comment: comment)
         case .httpStatus(let code, _) where code >= 500:
-            return NSLocalizedString("The server is having problems. Please try again later.", comment: "Network error shown to the user")
+            return NSLocalizedString("The server is having problems. Please try again later.", comment: comment)
         default:
-            return NSLocalizedString("Something went wrong. Please try again.", comment: "Network error shown to the user")
+            return NSLocalizedString("Something went wrong. Please try again.", comment: comment)
         }
     }
 }

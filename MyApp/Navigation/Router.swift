@@ -3,7 +3,6 @@ import SwiftUI
 
 /// All push destinations in the app. Add a case per new screen.
 enum AppRoute: Hashable {
-    case itemDetail(Item)
     case about
     case eventDetail(NewsEvent)
     case sources
@@ -35,8 +34,6 @@ extension View {
     func withAppRoutes() -> some View {
         navigationDestination(for: AppRoute.self) { route in
             switch route {
-            case .itemDetail(let item):
-                ItemDetailView(item: item)
             case .about:
                 AboutView()
             case .eventDetail(let event):

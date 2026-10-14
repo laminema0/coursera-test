@@ -11,7 +11,6 @@ final class AppContainer {
     let configuration: AppConfiguration
     let apiClient: APIClientProtocol
     let keyValueStore: KeyValueStore
-    let homeRepository: HomeRepository
     let feedRepository: FeedRepository
     let eventsRepository: EventsRepository
     let sourcesRepository: SourcesRepository
@@ -20,7 +19,6 @@ final class AppContainer {
         configuration: AppConfiguration,
         apiClient: APIClientProtocol,
         keyValueStore: KeyValueStore,
-        homeRepository: HomeRepository,
         feedRepository: FeedRepository,
         eventsRepository: EventsRepository,
         sourcesRepository: SourcesRepository
@@ -28,7 +26,6 @@ final class AppContainer {
         self.configuration = configuration
         self.apiClient = apiClient
         self.keyValueStore = keyValueStore
-        self.homeRepository = homeRepository
         self.feedRepository = feedRepository
         self.eventsRepository = eventsRepository
         self.sourcesRepository = sourcesRepository
@@ -36,9 +33,6 @@ final class AppContainer {
 
     static func live(configuration: AppConfiguration = .current) -> AppContainer {
         let apiClient = APIClient(baseURL: configuration.apiBaseURL)
-        let homeRepository: HomeRepository = configuration.useMockData
-            ? MockHomeRepository()
-            : LiveHomeRepository(apiClient: apiClient)
         let feedRepository: FeedRepository = configuration.useMockData
             ? MockFeedRepository()
             : LiveFeedRepository(apiClient: apiClient)
@@ -52,7 +46,6 @@ final class AppContainer {
             configuration: configuration,
             apiClient: apiClient,
             keyValueStore: UserDefaultsStore(),
-            homeRepository: homeRepository,
             feedRepository: feedRepository,
             eventsRepository: eventsRepository,
             sourcesRepository: sourcesRepository
@@ -66,7 +59,6 @@ final class AppContainer {
             configuration: configuration,
             apiClient: APIClient(baseURL: configuration.apiBaseURL),
             keyValueStore: InMemoryKeyValueStore(),
-            homeRepository: MockHomeRepository(delay: .zero),
             feedRepository: MockFeedRepository(delay: .zero),
             eventsRepository: MockEventsRepository(delay: .zero),
             sourcesRepository: MockSourcesRepository()

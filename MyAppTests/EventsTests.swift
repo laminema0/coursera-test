@@ -14,6 +14,8 @@ struct EventsTests {
         "first_seen_at": "2026-10-14T09:10:00.000Z", "last_updated_at": "2026-10-14T11:10:00.000Z",
         "key_terms": ["earthquake", "turkey", "malatya"], "importance": 9.4, "breaking": true, "new_origins_last_hour": 2,
         "first_report": { "source_id": "usgs", "source_name": "USGS", "at": "2026-10-14T09:10:00.000Z" },
+        "status_history": [{ "status": "unverified", "at": "2026-10-14T09:10:00.000Z", "confirming": 0 },
+          { "status": "confirmed", "at": "2026-10-14T09:15:00.000Z", "confirming": 1 }],
         "verification": { "status": "confirmed", "reason": "Confirmed by an official source, plus 5 independent sources.",
           "confirming": 6, "disputing": 0, "primary": 1, "tier1": 3, "signals": 1, "state_media_own_country": 0 },
         "numbers": [{ "kind": "killed", "min": 5, "max": 15, "most_reported": { "value": 14, "origins": 2 },
@@ -30,7 +32,7 @@ struct EventsTests {
           "source_id": "usgs", "source_name": "USGS", "published_at": "2026-10-14T09:10:00.000Z" }] }]
       }, {
         "id": "e2", "title": "Something new", "first_seen_at": "2026-10-14T09:10:00Z", "last_updated_at": "2026-10-14T09:10:00Z",
-        "key_terms": [], "importance": 1, "breaking": false, "new_origins_last_hour": 0,
+        "key_terms": [], "importance": 1, "breaking": false, "new_origins_last_hour": 0, "status_history": [],
         "verification": { "status": "some-future-status", "reason": "", "confirming": 0, "disputing": 0,
           "primary": 0, "tier1": 0, "signals": 1, "state_media_own_country": 0 }, "numbers": [],
         "chatter_only": [{ "kind": "missing", "values": [{ "value": 4, "mentions": 3 }] }], "statements": [], "origins": []
@@ -50,6 +52,7 @@ struct EventsTests {
         #expect(quake.coverage?.outlets == 87)
         #expect(quake.firstReport?.sourceName == "USGS")
         #expect(quake.breaking)
+        #expect(quake.statusHistory.map(\.status) == [.unverified, .confirmed])
         #expect(quake.numbers.first?.chatter.first?.mentions == 2)
         #expect(response.events.last?.chatterOnly.first?.kind == .missing)
         #expect(response.events.last?.coverage == nil)

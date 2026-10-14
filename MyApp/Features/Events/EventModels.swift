@@ -21,6 +21,8 @@ struct NewsEvent: Identifiable, Decodable, Hashable, Sendable {
     let newOriginsLastHour: Int
     /// Earliest report from a news or official source (social posts excluded).
     let firstReport: FirstReport?
+    /// How the status changed over time, oldest first (⚪ → 🟡 → 🟢 → ✅ …).
+    let statusHistory: [StatusChange]
     let verification: Verification
     let numbers: [NumberSummary]
     /// Numbers that so far appear only in social posts (unverified chatter).
@@ -29,6 +31,12 @@ struct NewsEvent: Identifiable, Decodable, Hashable, Sendable {
     /// Worldwide coverage (GDELT): how far the story has spread. Not confirmation.
     let coverage: Coverage?
     let origins: [EventOrigin]
+}
+
+struct StatusChange: Decodable, Hashable, Sendable {
+    let status: VerificationStatus
+    let at: Date
+    let confirming: Int
 }
 
 struct FirstReport: Decodable, Hashable, Sendable {

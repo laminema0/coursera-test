@@ -1,3 +1,4 @@
+import type { StatusChange } from "./analysis/history.ts";
 import { rankEvent } from "./analysis/rank.ts";
 import type { VerifiedEvent } from "./analysis/verify.ts";
 import type { Coverage } from "./sources/gdelt.ts";
@@ -20,6 +21,8 @@ export interface ApiEvent {
   breaking: boolean;
   new_origins_last_hour: number;
   first_report?: { source_id: string; source_name: string; at: string };
+  /** How the status changed over time, oldest first (⚪ → 🟡 → 🟢 → ✅ …). */
+  status_history: { status: string; at: string; confirming: number }[];
   verification: {
     status: string;
     reason: string;
@@ -60,6 +63,7 @@ export function toApiEvents(
   sources: Map<string, NewsSource>,
   now: Date,
   coverageOf: (eventId: string) => Coverage | undefined = () => undefined,
+  historyOf: (eventId: string) => StatusChange[] = () => [],
 ): EventsResponse {
   return {
     generated_at: now.toISOString(),
@@ -77,6 +81,7 @@ export function toApiEvents(
         source_name: sources.get(e.firstReport.sourceId)?.name ?? e.firstReport.sourceId,
         at: e.firstReport.at,
       },
+      status_history: historyOf(e.id).map((h) => ({ status: h.status, at: h.at, confirming: h.confirming })),
       verification: {
         status: e.verification.status,
         reason: e.verification.reason,

@@ -45,7 +45,7 @@ struct MockEventsRepository: EventsRepository {
             NewsEvent(
                 id: id, title: title, firstSeenAt: .now.addingTimeInterval(-7_200), lastUpdatedAt: .now.addingTimeInterval(-300),
                 keyTerms: [], importance: Double(confirming), breaking: status == .confirmed || status == .corroborated,
-                newOriginsLastHour: 0, firstReport: nil, verification: Verification(
+                newOriginsLastHour: 0, firstReport: nil, statusHistory: [], verification: Verification(
                     status: status, reason: reason, confirming: confirming, disputing: disputing,
                     primary: primary, tier1: tier1, signals: signals, stateMediaOwnCountry: 0
                 ),

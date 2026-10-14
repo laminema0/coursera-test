@@ -1,5 +1,6 @@
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
+import { type HistorySnapshot, StatusHistory } from "./analysis/history.ts";
 import { TrackRecord, type TrackRecordSnapshot } from "./analysis/track-record.ts";
 import { analyze } from "./analysis/verify.ts";
 import { DailyBudget } from "./budget.ts";
@@ -29,6 +30,10 @@ const trackRecordFile = dataDir ? join(dataDir, "track-record.json") : undefined
 const trackRecord = trackRecordFile && existsSync(trackRecordFile)
   ? TrackRecord.restore(JSON.parse(readFileSync(trackRecordFile, "utf8")) as TrackRecordSnapshot)
   : new TrackRecord();
+const historyFile = dataDir ? join(dataDir, "status-history.json") : undefined;
+const statusHistory = historyFile && existsSync(historyFile)
+  ? StatusHistory.restore(JSON.parse(readFileSync(historyFile, "utf8")) as HistorySnapshot)
+  : new StatusHistory();
 const coverage = new CoverageTracker();
 const GDELT_ENABLED = process.env.GDELT !== "off";
 
@@ -36,8 +41,9 @@ async function analyzeNow(): Promise<void> {
   const started = Date.now();
   const all = [...articles.articles.values()];
   const events = analyze(all, sourceMap);
+  if (statusHistory.record(events, new Date())) save(historyFile, statusHistory.snapshot());
   const publish = () => {
-    latestEvents = toApiEvents(events, articles.articles, sourceMap, new Date(), (id) => coverage.get(id));
+    latestEvents = toApiEvents(events, articles.articles, sourceMap, new Date(), (id) => coverage.get(id), (id) => statusHistory.get(id));
   };
   publish();
   if (trackRecord.update(events, new Date()) > 0) save(trackRecordFile, trackRecord.snapshot());

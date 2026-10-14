@@ -5,6 +5,9 @@ import SwiftUI
 enum AppRoute: Hashable {
     case itemDetail(Item)
     case about
+    case eventDetail(NewsEvent)
+    case sources
+    case statusGuide
 }
 
 /// Owns the navigation stack for one tab.
@@ -36,6 +39,12 @@ extension View {
                 ItemDetailView(item: item)
             case .about:
                 AboutView()
+            case .eventDetail(let event):
+                EventDetailView(event: event)
+            case .sources:
+                SourcesView()
+            case .statusGuide:
+                StatusGuideView()
             }
         }
     }

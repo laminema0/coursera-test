@@ -44,8 +44,15 @@ cd backend
 npm install
 npm test
 npm run check-sources   # checks every feed from your machine
-npm start               # http://localhost:8787/v1/articles
+npm run analyze         # collect once and print verified events in the terminal
+npm start               # API on http://localhost:8787
 ```
+| Endpoint | What it returns |
+|---|---|
+| `GET /v1/events?status=&since=&limit=` | Events with status (⚪🟡🟢✅🔴⚫), reason, numbers, statements, coverage, sources |
+| `GET /v1/articles?since=&limit=` | Raw collected articles with their sources |
+| `GET /v1/sources` | All sources with tier, owner, and health |
+| `GET /v1/feed` | X posts (only when the paid X integration is on) |
 
 ## Tests
 ```bash

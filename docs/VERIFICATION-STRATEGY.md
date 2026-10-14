@@ -23,12 +23,14 @@ Paid APIs (X, news APIs, AI APIs) are a **later milestone**, if subscriptions ev
             │ RSS / Atom / GeoJSON, polled politely (ETag, ≥5 min, backoff)
             ▼
  ① Collect  → Article {headline, ≤300-char summary, link, source}         ✅ built
- ② Group    → Event   (articles about the same incident)                  ⬜ next
- ③ Extract  → Claim   (who said what, numbers, where, when)               ⬜
- ④ Score    → status per claim, counting only INDEPENDENT sources         ⬜
+ ② Group    → Event   (articles about the same incident)                  ✅ built
+ ③ Extract  → Claims  (numbers + who they come from, statements, denials) ✅ built (rules)
+ ④ Score    → status per event, counting only INDEPENDENT sources         ✅ built
             ⚪ Unverified → 🟡 Reported → 🟢 Corroborated → ✅ Confirmed
                                     🔴 Disputed   ⚫ Retracted
- ⑤ Numbers  → range · most-reported · latest official · timeline          ⬜
+ ⑤ Numbers  → range · most-reported · latest official · timeline          ✅ built
+ +  Coverage → how many outlets/countries worldwide (GDELT, free)         ✅ built
+ +  First report → who reported first, and when                          ✅ built
             ▼
  iOS app (no accounts, no tracking)
 ```
@@ -124,14 +126,28 @@ Cross-language matching uses numbers, places and dates (language-independent) pl
 
 ---
 
+## How the status is decided (built)
+| Status | Rule |
+|---|---|
+| ⚫ Retracted | a news or official source reports a correction or retraction |
+| 🔴 Disputed | at least one independent source reports a denial, "false", "debunked"… |
+| ✅ Confirmed | an official source (USGS, GDACS, UN, WHO, governments) reports it |
+| 🟢 Corroborated | ≥ 3 independent sources, or ≥ 2 including one tier-1 source |
+| 🟡 Reported | 1 independent source, or 2 tier-2 sources |
+| ⚪ Unverified | only social posts, or only state media of the country involved |
+
+"Independent" = different owner; wire copies ("— Reuters") count once as the wire; near-identical text counts once.
+
+**Numbers:** each source's *latest* value counts (early counts get replaced as sources update). We show the range, the value reported by the most independent sources, and the latest value from officials (or attributed to them: "police said…").
+
 ## Status
 | # | Card | Status |
 |---|---|---|
 | 1 | Free data (55 RSS + official feeds) | 🟩 built |
 | 1a–d | Wires, broken feeds, politeness, short summaries | 🟩 built (wire-credit detection in step ③) |
 | 2 | Copyright | 🟩 built |
-| 3 | Independence, honest counts, state media, campaigns | 🟩 designed; built in steps ②–④ |
-| 4 | Free claim extraction | 🟩 designed; step ③ |
+| 3 | Independence, honest counts, state media, campaigns | 🟩 built |
+| 4 | Free claim extraction | 🟩 built (rules); local AI model later for harder sentences |
 | 5 | Free hosting | 🟩 decided |
 | 6 | Apple costs | 🟩 decided |
 | 7 | Speed vs. reliability | 🟩 designed |

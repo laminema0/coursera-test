@@ -50,9 +50,11 @@ export function parseUsgsGeoJson(body: string): FeedEntry[] {
       p.alert ? `PAGER alert: ${p.alert}` : undefined,
       p.tsunami ? "Tsunami flag set" : undefined,
     ].filter(Boolean);
+    // "M 6.1 - 20 km S of Town" → "M 6.1 earthquake – 20 km S of Town": reads (and matches) like a headline.
+    const title = p.mag !== undefined && p.place ? `M ${p.mag} earthquake – ${p.place}` : p.title;
     return [{
       url: p.url,
-      title: p.title,
+      title,
       summary: details.join(" · ") || undefined,
       publishedAt: p.time ? new Date(p.time).toISOString() : undefined,
     }];

@@ -51,7 +51,7 @@ test("cuts long descriptions to a short summary", () => {
 test("parses USGS GeoJSON as a primary source", () => {
   assert.deepEqual(parseUsgsGeoJson(USGS), [{
     url: "https://earthquake.usgs.gov/earthquakes/eventpage/us1",
-    title: "M 6.1 - 20 km S of Town",
+    title: "M 6.1 earthquake – 20 km S of Town",
     summary: "Magnitude 6.1 · 20 km S of Town · PAGER alert: yellow · Tsunami flag set",
     publishedAt: "2026-10-14T09:10:00.000Z",
   }]);

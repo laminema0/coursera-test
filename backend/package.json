@@ -8,11 +8,12 @@
     "node": ">=22.18"
   },
   "scripts": {
-    "start": "node --env-file-if-exists=.env src/main.ts",
-    "test": "node --test 'test/**/*.test.ts'",
+    "start": "node --disable-warning=ExperimentalWarning --env-file-if-exists=.env src/main.ts",
+    "test": "node --disable-warning=ExperimentalWarning --test 'test/**/*.test.ts'",
     "typecheck": "tsc --noEmit",
     "check-sources": "node scripts/check-sources.ts",
-    "analyze": "node scripts/analyze.ts"
+    "analyze": "node scripts/analyze.ts",
+    "serve-fixtures": "node scripts/serve-fixtures.ts"
   },
   "devDependencies": {
     "@types/node": "^22.15.0",

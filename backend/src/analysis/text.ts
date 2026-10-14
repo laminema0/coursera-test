@@ -32,17 +32,25 @@ const SYNONYMS = new Map<string, string>([
   ["gunman", "shoot"], ["shooting", "shoot"], ["shootings", "shoot"], ["gunfire", "shoot"], ["shots", "shoot"], ["shot", "shoot"],
   ["flooding", "flood"], ["floods", "flood"], ["flooded", "flood"],
   ["blast", "explosion"], ["explosions", "explosion"], ["exploded", "explosion"],
+  ["vote", "election"], ["votes", "election"], ["voting", "election"], ["ballot", "election"], ["elections", "election"],
+  ["mayoral", "mayor"], ["presidential", "president"],
+  ["wins", "win"], ["won", "win"], ["winning", "win"], ["victory", "win"],
 ]);
 
 /** Very light suffix stripping: enough to match "killed/kills/killing" or "earthquakes/earthquake". */
 export function stem(word: string): string {
   if (word.length > 5 && word.endsWith("ies")) return `${word.slice(0, -3)}y`;
-  if (word.length > 5 && word.endsWith("ing")) return word.slice(0, -3);
-  if (word.length > 4 && word.endsWith("ed")) return word.slice(0, -2);
+  if (word.length > 5 && word.endsWith("ing")) return undouble(word.slice(0, -3));
+  if (word.length > 4 && word.endsWith("ed")) return undouble(word.slice(0, -2));
   if (word.length > 4 && /(ss|us|is)$/.test(word)) return word;
   if (word.length > 3 && word.endsWith("es") && /(sh|ch|x|z)es$/.test(word)) return word.slice(0, -2);
   if (word.length > 3 && word.endsWith("s")) return word.slice(0, -1);
   return word;
+}
+
+/** "winn" → "win", "stopp" → "stop" (after removing -ing/-ed). Keeps ll/ss/zz ("fall", "pass"). */
+function undouble(stem: string): string {
+  return /([^aeiouylsz])\1$/.test(stem) ? stem.slice(0, -1) : stem;
 }
 
 export type SparseVector = Map<string, number>;

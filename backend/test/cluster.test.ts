@@ -8,6 +8,9 @@ test("tokenize drops stop words and numbers and stems", () => {
   assert.deepEqual(tokenize("Earthquake kills 12 people in Turkey's Malatya, officials said"), ["earthquake", "kill", "people", "turkey", "malatya", "official"]);
   assert.equal(stem("injuries"), "injury");
   assert.equal(stem("crisis"), "crisis");
+  assert.equal(stem("winning"), "win");
+  assert.equal(stem("stopped"), "stop");
+  assert.equal(stem("falling"), "fall");
 });
 
 test("groups breaking-news coverage into the right events", () => {
@@ -61,4 +64,17 @@ test("same kind of incident in different places stays separate", () => {
   assert.equal(eventOf("extra-0"), eventOf("extra-1"), "both Chile reports together");
   assert.notEqual(eventOf("extra-0"), quake, "Chile ≠ Turkey");
   assert.notEqual(eventOf("extra-2"), shooting, "Texas ≠ Ohio");
+});
+
+test("different stories about the same place stay separate", () => {
+  const extra = [
+    { title: "Malatya mayoral election: opposition candidate claims victory", summary: "The opposition candidate declared victory in the Malatya mayoral race after counting ended.", source: "guardian", at: "2026-10-14T18:00:00Z" },
+    { title: "Opposition wins Malatya mayor vote, results show", summary: "Results showed the opposition party winning the mayoral election in Malatya.", source: "dw", at: "2026-10-14T18:30:00Z" },
+  ].map((e, i) => ({ id: `vote-${i}`, url: `https://v.test/${i}`, title: e.title, summary: e.summary, publishedAt: new Date(e.at).toISOString(), fetchedAt: e.at, language: "en", sourceIds: [e.source] }));
+
+  const events = clusterArticles([...articles, ...extra], sourceMap);
+  const eventOf = (id: string) => events.find((e) => e.articleIds.includes(id))!;
+  const quake = eventOf(articles.find((a) => expectedEvent.get(a.id) === "quake" && a.sourceIds[0] === "dw")!.id);
+  assert.equal(eventOf("vote-0"), eventOf("vote-1"), "both election reports together");
+  assert.notEqual(eventOf("vote-0"), quake, "election ≠ earthquake");
 });

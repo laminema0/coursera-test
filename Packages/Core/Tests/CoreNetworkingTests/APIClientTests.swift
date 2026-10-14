@@ -58,6 +58,13 @@ struct APIClientTests {
         }
     }
 
+    @Test func decodesDatesWithAndWithoutFractionalSeconds() throws {
+        struct Stamp: Decodable { let at: Date }
+        let withMillis = try JSONDecoder.api.decode(Stamp.self, from: Data(#"{"at": "2026-10-14T10:00:00.250Z"}"#.utf8))
+        let plain = try JSONDecoder.api.decode(Stamp.self, from: Data(#"{"at": "2026-10-14T10:00:00Z"}"#.utf8))
+        #expect(withMillis.at.timeIntervalSince(plain.at) == 0.25)
+    }
+
     @Test func returnsEmptyResponseWithoutDecoding() async throws {
         respond(status: 204, json: "")
         let result = try await client.send(Endpoint<EmptyResponse>(path: "logout", method: .post))

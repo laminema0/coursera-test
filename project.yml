@@ -61,6 +61,8 @@ targets:
         APP_ENVIRONMENT: $(APP_ENVIRONMENT)
         API_BASE_URL: $(API_BASE_URL)
         USE_MOCK_DATA: $(USE_MOCK_DATA)
+        NSAppTransportSecurity:
+          NSAllowsLocalNetworking: true
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: $(APP_BUNDLE_ID)

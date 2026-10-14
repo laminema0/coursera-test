@@ -73,11 +73,21 @@ public final class APIClient: APIClientProtocol, @unchecked Sendable {
 }
 
 public extension JSONDecoder {
-    /// Default decoder for the API: snake_case keys, ISO-8601 dates.
+    /// Default decoder for the API: snake_case keys, ISO-8601 dates with or without fractional seconds.
     static var api: JSONDecoder {
         let decoder = JSONDecoder()
         decoder.keyDecodingStrategy = .convertFromSnakeCase
-        decoder.dateDecodingStrategy = .iso8601
+        decoder.dateDecodingStrategy = .custom { decoder in
+            let container = try decoder.singleValueContainer()
+            let string = try container.decode(String.self)
+            if let date = try? Date.ISO8601FormatStyle(includingFractionalSeconds: true).parse(string) {
+                return date
+            }
+            if let date = try? Date.ISO8601FormatStyle().parse(string) {
+                return date
+            }
+            throw DecodingError.dataCorruptedError(in: container, debugDescription: "Invalid ISO-8601 date: \(string)")
+        }
         return decoder
     }
 }

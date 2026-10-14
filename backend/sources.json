@@ -1,0 +1,18 @@
+{
+  "groups": [
+    {
+      "id": "breaking",
+      "label": "Breaking & world news",
+      "accounts": ["Reuters", "AP", "AFP", "BBCBreaking", "BBCWorld", "AJEnglish", "dwnews"],
+      "pollMinutes": 5,
+      "maxResultsPerPoll": 20
+    },
+    {
+      "id": "tech",
+      "label": "Technology",
+      "accounts": ["verge", "TechCrunch", "WIRED", "arstechnica"],
+      "pollMinutes": 30,
+      "maxResultsPerPoll": 10
+    }
+  ]
+}

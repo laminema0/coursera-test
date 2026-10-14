@@ -12,17 +12,20 @@ final class AppContainer {
     let apiClient: APIClientProtocol
     let keyValueStore: KeyValueStore
     let homeRepository: HomeRepository
+    let feedRepository: FeedRepository
 
     init(
         configuration: AppConfiguration,
         apiClient: APIClientProtocol,
         keyValueStore: KeyValueStore,
-        homeRepository: HomeRepository
+        homeRepository: HomeRepository,
+        feedRepository: FeedRepository
     ) {
         self.configuration = configuration
         self.apiClient = apiClient
         self.keyValueStore = keyValueStore
         self.homeRepository = homeRepository
+        self.feedRepository = feedRepository
     }
 
     static func live(configuration: AppConfiguration = .current) -> AppContainer {
@@ -30,11 +33,15 @@ final class AppContainer {
         let homeRepository: HomeRepository = configuration.useMockData
             ? MockHomeRepository()
             : LiveHomeRepository(apiClient: apiClient)
+        let feedRepository: FeedRepository = configuration.useMockData
+            ? MockFeedRepository()
+            : LiveFeedRepository(apiClient: apiClient)
         return AppContainer(
             configuration: configuration,
             apiClient: apiClient,
             keyValueStore: UserDefaultsStore(),
-            homeRepository: homeRepository
+            homeRepository: homeRepository,
+            feedRepository: feedRepository
         )
     }
 
@@ -45,7 +52,8 @@ final class AppContainer {
             configuration: configuration,
             apiClient: APIClient(baseURL: configuration.apiBaseURL),
             keyValueStore: InMemoryKeyValueStore(),
-            homeRepository: MockHomeRepository(delay: .zero)
+            homeRepository: MockHomeRepository(delay: .zero),
+            feedRepository: MockFeedRepository(delay: .zero)
         )
     }
 }

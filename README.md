@@ -35,6 +35,13 @@ Set API URLs and names in `Configs/*.xcconfig`. Don't put secrets there.
 3. Add routes to `AppRoute` and `withAppRoutes()`.
 4. Add view model tests in `MyAppTests/`.
 
+## Backend (news ingestion from X)
+`backend/` fetches posts from the X API, groups them into stories and serves `GET /v1/feed`.
+See [docs/X-INTEGRATION.md](docs/X-INTEGRATION.md).
+```bash
+cd backend && npm install && npm test
+```
+
 ## Tests
 ```bash
 swift test --package-path Packages/Core

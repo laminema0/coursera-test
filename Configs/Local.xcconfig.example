@@ -1,0 +1,11 @@
+// Copy to Configs/Local.xcconfig (not committed) and fill in. Then run `xcodegen generate`.
+
+// Your Team ID: Xcode → Settings → Accounts → your Apple ID → Personal Team.
+// Or pick the team once in Xcode (Signing & Capabilities) and copy the ID it shows.
+DEVELOPMENT_TEAM = ABCDE12345
+
+// Must be unique for a free Apple ID; "com.example…" is already taken.
+APP_BUNDLE_ID_BASE = com.yourname.myapp
+
+// Optional: the backend for Staging/Release builds (note the /$()/ trick: "//" starts a comment).
+// API_BASE_URL = https:/$()/news.example.org/v1

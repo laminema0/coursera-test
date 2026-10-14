@@ -7,7 +7,12 @@ struct NewsTab: View {
     let router: Router
 
     var body: some View {
-        NewsTabStack(store: EventsStore(repository: container.eventsRepository), router: router)
+        let store = EventsStore(
+            repository: container.eventsRepository,
+            cache: container.eventsCache,
+            alertState: StoryAlertState(store: container.keyValueStore)
+        )
+        NewsTabStack(store: store, router: router)
     }
 }
 
@@ -15,11 +20,21 @@ struct NewsTab: View {
 private struct NewsTabStack: View {
     @State var store: EventsStore
     @Bindable var router: Router
+    private let storyLinks = StoryLinks.shared
 
     var body: some View {
         NavigationStack(path: $router.path) {
             EventsListView()
                 .withAppRoutes()
+        }
+        .task(id: storyLinks.pendingEventId) {
+            guard let eventId = storyLinks.pendingEventId else { return }
+            await store.loadIfNeeded()
+            if let event = store.event(id: eventId) {
+                router.popToRoot()
+                router.push(.eventDetail(event))
+            }
+            storyLinks.pendingEventId = nil
         }
         // On the stack, so pushed detail screens see live updates too.
         .environment(store)
@@ -55,10 +70,12 @@ struct EventsListView: View {
                         }
                 }
             }
-            .task { await store.loadIfNeeded() }
             .task(id: scenePhase) {
-                // Refresh every minute while the list is on screen and the app is active.
+                // Cached stories first, then fresh ones; refresh on return to the foreground
+                // and every minute while the list is on screen.
                 guard scenePhase == .active else { return }
+                await store.loadIfNeeded()
+                await store.refreshIfStale(maxAge: 30)
                 await store.autoRefresh(every: .seconds(60))
             }
     }
@@ -89,12 +106,15 @@ struct EventsListView: View {
 private struct EventsList: View {
     @Environment(EventsStore.self) private var store
     @Binding var filter: VerificationStatus?
+    @State private var manualRefreshes = 0
 
     var body: some View {
         let sections = store.sections(filter: filter)
         List {
             if let error = store.lastError {
-                RefreshErrorRow(message: error)
+                RefreshErrorRow(message: error, lastUpdated: store.lastUpdated)
+            } else if store.isShowingCachedEvents {
+                CachedEventsRow()
             }
             ForEach(sections) { section in
                 Section {
@@ -118,7 +138,13 @@ private struct EventsList: View {
         .safeAreaInset(edge: .top, spacing: 0) {
             StatusFilterBar(selection: $filter)
         }
-        .refreshable { await store.refresh() }
+        .refreshable {
+            await store.refresh()
+            manualRefreshes += 1
+        }
+        .sensoryFeedback(trigger: manualRefreshes) { _, _ in
+            store.lastError == nil ? .success : .error
+        }
     }
 }
 
@@ -140,17 +166,34 @@ private struct StatusSectionHeader: View {
     }
 }
 
+/// Offline or server problem while stories are on screen: keep them and say how old they are.
 private struct RefreshErrorRow: View {
     let message: String
+    let lastUpdated: Date?
 
     var body: some View {
         Label {
-            Text("Couldn't refresh. \(message)")
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Couldn't refresh. \(message)")
+                if let lastUpdated {
+                    Text("Showing stories from \(lastUpdated, format: .relative(presentation: .named)).")
+                        .foregroundStyle(Color.dsTextSecondary)
+                }
+            }
         } icon: {
-            Image(systemName: "exclamationmark.triangle.fill")
+            Image(systemName: "wifi.exclamationmark")
                 .foregroundStyle(Color.dsWarning)
         }
         .font(.dsCaption)
+        .accessibilityElement(children: .combine)
+    }
+}
+
+private struct CachedEventsRow: View {
+    var body: some View {
+        Label("Showing saved stories while new ones load…", systemImage: "clock.arrow.circlepath")
+            .font(.dsCaption)
+            .foregroundStyle(Color.dsTextSecondary)
     }
 }
 

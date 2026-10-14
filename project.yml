@@ -63,6 +63,9 @@ targets:
         USE_MOCK_DATA: $(USE_MOCK_DATA)
         NSAppTransportSecurity:
           NSAllowsLocalNetworking: true
+        # Background app refresh checks for news; identifier must match BackgroundRefresh.taskIdentifier.
+        UIBackgroundModes: [fetch]
+        BGTaskSchedulerPermittedIdentifiers: [com.example.myapp.refresh-events]
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: $(APP_BUNDLE_ID)

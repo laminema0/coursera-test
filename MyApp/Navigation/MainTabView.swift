@@ -9,6 +9,7 @@ struct MainTabView: View {
     @State private var newsRouter = Router()
     @State private var sourcesRouter = Router()
     @State private var settingsRouter = Router()
+    private let storyLinks = StoryLinks.shared
 
     var body: some View {
         TabView(selection: $selection) {
@@ -31,6 +32,12 @@ struct MainTabView: View {
             .environment(settingsRouter)
             .tabItem { Label("Settings", systemImage: "gearshape") }
             .tag(Tab.settings)
+        }
+        .onChange(of: storyLinks.pendingEventId, initial: true) { _, eventId in
+            // A tapped notification opens its story on the News tab.
+            if eventId != nil {
+                selection = .news
+            }
         }
     }
 }

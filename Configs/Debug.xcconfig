@@ -6,3 +6,6 @@ APP_DISPLAY_NAME = MyApp Dev
 // Local backend (backend/, `npm start`). Set USE_MOCK_DATA = NO to use it.
 API_BASE_URL = http:/$()/localhost:8787/v1
 USE_MOCK_DATA = YES
+
+// Your own signing team, bundle ID or server (not committed; see docs/INSTALL-ON-IPHONE.md). Last, so it wins.
+#include? "Local.xcconfig"

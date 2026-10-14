@@ -3,6 +3,7 @@ import SwiftUI
 
 @main
 struct MyAppApp: App {
+    @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @State private var container: AppContainer
     @State private var appState: AppState
     @Environment(\.scenePhase) private var scenePhase

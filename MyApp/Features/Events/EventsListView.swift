@@ -20,11 +20,21 @@ struct NewsTab: View {
 private struct NewsTabStack: View {
     @State var store: EventsStore
     @Bindable var router: Router
+    private let storyLinks = StoryLinks.shared
 
     var body: some View {
         NavigationStack(path: $router.path) {
             EventsListView()
                 .withAppRoutes()
+        }
+        .task(id: storyLinks.pendingEventId) {
+            guard let eventId = storyLinks.pendingEventId else { return }
+            await store.loadIfNeeded()
+            if let event = store.event(id: eventId) {
+                router.popToRoot()
+                router.push(.eventDetail(event))
+            }
+            storyLinks.pendingEventId = nil
         }
         // On the stack, so pushed detail screens see live updates too.
         .environment(store)

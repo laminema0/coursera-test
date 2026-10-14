@@ -14,6 +14,7 @@ final class AppContainer {
     let homeRepository: HomeRepository
     let feedRepository: FeedRepository
     let eventsRepository: EventsRepository
+    let sourcesRepository: SourcesRepository
 
     init(
         configuration: AppConfiguration,
@@ -21,7 +22,8 @@ final class AppContainer {
         keyValueStore: KeyValueStore,
         homeRepository: HomeRepository,
         feedRepository: FeedRepository,
-        eventsRepository: EventsRepository
+        eventsRepository: EventsRepository,
+        sourcesRepository: SourcesRepository
     ) {
         self.configuration = configuration
         self.apiClient = apiClient
@@ -29,6 +31,7 @@ final class AppContainer {
         self.homeRepository = homeRepository
         self.feedRepository = feedRepository
         self.eventsRepository = eventsRepository
+        self.sourcesRepository = sourcesRepository
     }
 
     static func live(configuration: AppConfiguration = .current) -> AppContainer {
@@ -42,13 +45,17 @@ final class AppContainer {
         let eventsRepository: EventsRepository = configuration.useMockData
             ? MockEventsRepository()
             : LiveEventsRepository(apiClient: apiClient)
+        let sourcesRepository: SourcesRepository = configuration.useMockData
+            ? MockSourcesRepository()
+            : LiveSourcesRepository(apiClient: apiClient)
         return AppContainer(
             configuration: configuration,
             apiClient: apiClient,
             keyValueStore: UserDefaultsStore(),
             homeRepository: homeRepository,
             feedRepository: feedRepository,
-            eventsRepository: eventsRepository
+            eventsRepository: eventsRepository,
+            sourcesRepository: sourcesRepository
         )
     }
 
@@ -61,7 +68,8 @@ final class AppContainer {
             keyValueStore: InMemoryKeyValueStore(),
             homeRepository: MockHomeRepository(delay: .zero),
             feedRepository: MockFeedRepository(delay: .zero),
-            eventsRepository: MockEventsRepository(delay: .zero)
+            eventsRepository: MockEventsRepository(delay: .zero),
+            sourcesRepository: MockSourcesRepository()
         )
     }
 }

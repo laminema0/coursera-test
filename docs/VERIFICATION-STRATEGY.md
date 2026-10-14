@@ -91,7 +91,7 @@ A paid AI API is a later milestone.
 
 ### 5. Hosting with no budget
 🟥 **5. A server that runs all the time usually costs money.**
-🟩 Development: run it on your own computer. Public: **Oracle Cloud "Always Free"** VM (always on, enough for 55 feeds) or a Raspberry Pi at home.
+🟩 Development: run it on your own computer. Public: **Oracle Cloud "Always Free"** VM (always on, enough for 55 feeds) or a Raspberry Pi at home. Step-by-step guide: [DEPLOY.md](DEPLOY.md).
 
 &nbsp;&nbsp;🟥 **5a. Free cron services (e.g. GitHub Actions) can start 10–30+ minutes late.**
 &nbsp;&nbsp;🟩 That's too slow for breaking news, so use an always-on process. Cron is only a backup.

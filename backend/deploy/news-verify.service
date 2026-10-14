@@ -1,0 +1,26 @@
+# systemd service for the backend. Install:
+#   sudo cp deploy/news-verify.service /etc/systemd/system/
+#   sudo systemctl daemon-reload && sudo systemctl enable --now news-verify
+#   journalctl -u news-verify -f        # logs
+[Unit]
+Description=News verification backend (free sources)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=newsverify
+WorkingDirectory=/opt/news-verify/backend
+EnvironmentFile=-/opt/news-verify/backend/.env
+ExecStart=/usr/bin/node src/main.ts
+Restart=always
+RestartSec=10
+# Hardening: the service only needs its own data folder.
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/news-verify/backend/data
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

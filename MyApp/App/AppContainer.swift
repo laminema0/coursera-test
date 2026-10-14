@@ -13,19 +13,22 @@ final class AppContainer {
     let keyValueStore: KeyValueStore
     let homeRepository: HomeRepository
     let feedRepository: FeedRepository
+    let eventsRepository: EventsRepository
 
     init(
         configuration: AppConfiguration,
         apiClient: APIClientProtocol,
         keyValueStore: KeyValueStore,
         homeRepository: HomeRepository,
-        feedRepository: FeedRepository
+        feedRepository: FeedRepository,
+        eventsRepository: EventsRepository
     ) {
         self.configuration = configuration
         self.apiClient = apiClient
         self.keyValueStore = keyValueStore
         self.homeRepository = homeRepository
         self.feedRepository = feedRepository
+        self.eventsRepository = eventsRepository
     }
 
     static func live(configuration: AppConfiguration = .current) -> AppContainer {
@@ -36,12 +39,16 @@ final class AppContainer {
         let feedRepository: FeedRepository = configuration.useMockData
             ? MockFeedRepository()
             : LiveFeedRepository(apiClient: apiClient)
+        let eventsRepository: EventsRepository = configuration.useMockData
+            ? MockEventsRepository()
+            : LiveEventsRepository(apiClient: apiClient)
         return AppContainer(
             configuration: configuration,
             apiClient: apiClient,
             keyValueStore: UserDefaultsStore(),
             homeRepository: homeRepository,
-            feedRepository: feedRepository
+            feedRepository: feedRepository,
+            eventsRepository: eventsRepository
         )
     }
 
@@ -53,7 +60,8 @@ final class AppContainer {
             apiClient: APIClient(baseURL: configuration.apiBaseURL),
             keyValueStore: InMemoryKeyValueStore(),
             homeRepository: MockHomeRepository(delay: .zero),
-            feedRepository: MockFeedRepository(delay: .zero)
+            feedRepository: MockFeedRepository(delay: .zero),
+            eventsRepository: MockEventsRepository(delay: .zero)
         )
     }
 }

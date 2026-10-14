@@ -35,11 +35,16 @@ Set API URLs and names in `Configs/*.xcconfig`. Don't put secrets there.
 3. Add routes to `AppRoute` and `withAppRoutes()`.
 4. Add view model tests in `MyAppTests/`.
 
-## Backend (news ingestion from X)
-`backend/` fetches posts from the X API, groups them into stories and serves `GET /v1/feed`.
-See [docs/X-INTEGRATION.md](docs/X-INTEGRATION.md).
+## Backend (news collection)
+`backend/` collects news from 55 free English sources (RSS/Atom feeds and official feeds) and serves it to the app.
+The X API integration is optional (paid) and switches on only with `X_BEARER_TOKEN`.
+See [docs/VERIFICATION-STRATEGY.md](docs/VERIFICATION-STRATEGY.md).
 ```bash
-cd backend && npm install && npm test
+cd backend
+npm install
+npm test
+npm run check-sources   # checks every feed from your machine
+npm start               # http://localhost:8787/v1/articles
 ```
 
 ## Tests

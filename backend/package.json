@@ -2,16 +2,22 @@
   "name": "news-ingestion",
   "version": "0.1.0",
   "private": true,
-  "description": "Fetches news posts from the X API, groups them into stories and serves a feed to the iOS app.",
+  "description": "Collects news from free sources (RSS, official feeds), optionally from X, and serves it to the iOS app.",
   "type": "module",
-  "engines": { "node": ">=22.18" },
+  "engines": {
+    "node": ">=22.18"
+  },
   "scripts": {
     "start": "node --env-file-if-exists=.env src/main.ts",
     "test": "node --test 'test/**/*.test.ts'",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "check-sources": "node scripts/check-sources.ts"
   },
   "devDependencies": {
     "@types/node": "^22.15.0",
     "typescript": "~5.9.0"
+  },
+  "dependencies": {
+    "fast-xml-parser": "^5.11.2"
   }
 }

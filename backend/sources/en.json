@@ -1,0 +1,559 @@
+{
+  "language": "en",
+  "notes": "Free sources only. tier 1 = strong editorial/corrections standards; tier 2 = other national/regional outlets; primary = official origin of claims; signal = early chatter, never confirms. 'owner' groups sources that are NOT independent of each other. Run `npm run check-sources` to verify every URL from your machine.",
+  "sources": [
+    {
+      "id": "bbc-world",
+      "name": "BBC News – World",
+      "url": "https://feeds.bbci.co.uk/news/world/rss.xml",
+      "format": "rss",
+      "tier": 1,
+      "owner": "bbc",
+      "country": "GB",
+      "pollMinutes": 5
+    },
+    {
+      "id": "bbc-top",
+      "name": "BBC News – Top stories",
+      "url": "https://feeds.bbci.co.uk/news/rss.xml",
+      "format": "rss",
+      "tier": 1,
+      "owner": "bbc",
+      "country": "GB",
+      "pollMinutes": 5
+    },
+    {
+      "id": "npr-news",
+      "name": "NPR – News",
+      "url": "https://feeds.npr.org/1001/rss.xml",
+      "format": "rss",
+      "tier": 1,
+      "owner": "npr",
+      "country": "US",
+      "pollMinutes": 5
+    },
+    {
+      "id": "npr-world",
+      "name": "NPR – World",
+      "url": "https://feeds.npr.org/1004/rss.xml",
+      "format": "rss",
+      "tier": 1,
+      "owner": "npr",
+      "country": "US",
+      "pollMinutes": 10
+    },
+    {
+      "id": "pbs-newshour",
+      "name": "PBS NewsHour",
+      "url": "https://www.pbs.org/newshour/feeds/rss/headlines",
+      "format": "rss",
+      "tier": 1,
+      "owner": "pbs",
+      "country": "US",
+      "pollMinutes": 10
+    },
+    {
+      "id": "dw-en",
+      "name": "DW – English",
+      "url": "https://rss.dw.com/rdf/rss-en-all",
+      "format": "rss",
+      "tier": 1,
+      "owner": "dw",
+      "country": "DE",
+      "pollMinutes": 5
+    },
+    {
+      "id": "france24-en",
+      "name": "France 24 – English",
+      "url": "https://www.france24.com/en/rss",
+      "format": "rss",
+      "tier": 1,
+      "owner": "france-medias-monde",
+      "country": "FR",
+      "pollMinutes": 5
+    },
+    {
+      "id": "rfi-en",
+      "name": "RFI – English",
+      "url": "https://www.rfi.fr/en/rss",
+      "format": "rss",
+      "tier": 1,
+      "owner": "france-medias-monde",
+      "country": "FR",
+      "pollMinutes": 10
+    },
+    {
+      "id": "cbc-world",
+      "name": "CBC News – World",
+      "url": "https://www.cbc.ca/webfeed/rss/rss-world",
+      "format": "rss",
+      "tier": 1,
+      "owner": "cbc",
+      "country": "CA",
+      "pollMinutes": 5
+    },
+    {
+      "id": "cbc-top",
+      "name": "CBC News – Top stories",
+      "url": "https://www.cbc.ca/webfeed/rss/rss-topstories",
+      "format": "rss",
+      "tier": 1,
+      "owner": "cbc",
+      "country": "CA",
+      "pollMinutes": 10
+    },
+    {
+      "id": "abc-au",
+      "name": "ABC News (Australia) – Just In",
+      "url": "https://www.abc.net.au/news/feed/51120/rss.xml",
+      "format": "rss",
+      "tier": 1,
+      "owner": "abc-au",
+      "country": "AU",
+      "pollMinutes": 5
+    },
+    {
+      "id": "rnz-world",
+      "name": "RNZ – World",
+      "url": "https://www.rnz.co.nz/rss/world.xml",
+      "format": "rss",
+      "tier": 1,
+      "owner": "rnz",
+      "country": "NZ",
+      "pollMinutes": 10
+    },
+    {
+      "id": "rte-news",
+      "name": "RTÉ News",
+      "url": "https://www.rte.ie/feeds/rss/?index=/news/",
+      "format": "rss",
+      "tier": 1,
+      "owner": "rte",
+      "country": "IE",
+      "pollMinutes": 10
+    },
+    {
+      "id": "guardian-world",
+      "name": "The Guardian – World",
+      "url": "https://www.theguardian.com/world/rss",
+      "format": "rss",
+      "tier": 1,
+      "owner": "guardian",
+      "country": "GB",
+      "pollMinutes": 5
+    },
+    {
+      "id": "nyt-world",
+      "name": "The New York Times – World",
+      "url": "https://rss.nytimes.com/services/xml/rss/nyt/World.xml",
+      "format": "rss",
+      "tier": 1,
+      "owner": "nyt",
+      "country": "US",
+      "pollMinutes": 5
+    },
+    {
+      "id": "nyt-home",
+      "name": "The New York Times – Home",
+      "url": "https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml",
+      "format": "rss",
+      "tier": 1,
+      "owner": "nyt",
+      "country": "US",
+      "pollMinutes": 10
+    },
+    {
+      "id": "wapo-world",
+      "name": "The Washington Post – World",
+      "url": "https://feeds.washingtonpost.com/rss/world",
+      "format": "rss",
+      "tier": 1,
+      "owner": "wapo",
+      "country": "US",
+      "pollMinutes": 10
+    },
+    {
+      "id": "globe-world",
+      "name": "The Globe and Mail – World",
+      "url": "https://www.theglobeandmail.com/arc/outboundfeeds/rss/category/world/",
+      "format": "rss",
+      "tier": 1,
+      "owner": "globe-and-mail",
+      "country": "CA",
+      "pollMinutes": 10
+    },
+    {
+      "id": "propublica",
+      "name": "ProPublica",
+      "url": "https://www.propublica.org/feeds/propublica/main",
+      "format": "rss",
+      "tier": 1,
+      "owner": "propublica",
+      "country": "US",
+      "pollMinutes": 60
+    },
+    {
+      "id": "cbs-world",
+      "name": "CBS News – World",
+      "url": "https://www.cbsnews.com/latest/rss/world",
+      "format": "rss",
+      "tier": 2,
+      "owner": "paramount",
+      "country": "US",
+      "pollMinutes": 10
+    },
+    {
+      "id": "nbc-world",
+      "name": "NBC News – World",
+      "url": "https://feeds.nbcnews.com/nbcnews/public/world",
+      "format": "rss",
+      "tier": 2,
+      "owner": "nbcuniversal",
+      "country": "US",
+      "pollMinutes": 10
+    },
+    {
+      "id": "abc-us-intl",
+      "name": "ABC News (US) – International",
+      "url": "https://abcnews.go.com/abcnews/internationalheadlines",
+      "format": "rss",
+      "tier": 2,
+      "owner": "disney",
+      "country": "US",
+      "pollMinutes": 10
+    },
+    {
+      "id": "fox-world",
+      "name": "Fox News – World",
+      "url": "https://moxie.foxnews.com/google-publisher/world.xml",
+      "format": "rss",
+      "tier": 2,
+      "owner": "fox",
+      "country": "US",
+      "pollMinutes": 10
+    },
+    {
+      "id": "sky-world",
+      "name": "Sky News – World",
+      "url": "https://feeds.skynews.com/feeds/rss/world.xml",
+      "format": "rss",
+      "tier": 2,
+      "owner": "sky",
+      "country": "GB",
+      "pollMinutes": 5
+    },
+    {
+      "id": "independent-world",
+      "name": "The Independent – World",
+      "url": "https://www.independent.co.uk/news/world/rss",
+      "format": "rss",
+      "tier": 2,
+      "owner": "independent",
+      "country": "GB",
+      "pollMinutes": 10
+    },
+    {
+      "id": "telegraph",
+      "name": "The Telegraph",
+      "url": "https://www.telegraph.co.uk/rss.xml",
+      "format": "rss",
+      "tier": 2,
+      "owner": "telegraph",
+      "country": "GB",
+      "pollMinutes": 10
+    },
+    {
+      "id": "latimes-world",
+      "name": "Los Angeles Times – World & Nation",
+      "url": "https://www.latimes.com/world-nation/rss2.0.xml",
+      "format": "rss",
+      "tier": 2,
+      "owner": "latimes",
+      "country": "US",
+      "pollMinutes": 10
+    },
+    {
+      "id": "politico",
+      "name": "Politico – Politics",
+      "url": "https://rss.politico.com/politics-news.xml",
+      "format": "rss",
+      "tier": 2,
+      "owner": "axel-springer",
+      "country": "US",
+      "pollMinutes": 15
+    },
+    {
+      "id": "thehill",
+      "name": "The Hill",
+      "url": "https://thehill.com/feed/",
+      "format": "rss",
+      "tier": 2,
+      "owner": "nexstar",
+      "country": "US",
+      "pollMinutes": 15
+    },
+    {
+      "id": "axios",
+      "name": "Axios",
+      "url": "https://api.axios.com/feed/",
+      "format": "rss",
+      "tier": 2,
+      "owner": "cox",
+      "country": "US",
+      "pollMinutes": 15
+    },
+    {
+      "id": "euronews",
+      "name": "Euronews",
+      "url": "https://www.euronews.com/rss?level=theme&name=news",
+      "format": "rss",
+      "tier": 2,
+      "owner": "euronews",
+      "country": "EU",
+      "pollMinutes": 10
+    },
+    {
+      "id": "aljazeera",
+      "name": "Al Jazeera English",
+      "url": "https://www.aljazeera.com/xml/rss/all.xml",
+      "format": "rss",
+      "tier": 2,
+      "owner": "aljazeera",
+      "country": "QA",
+      "pollMinutes": 5,
+      "stateFunded": true
+    },
+    {
+      "id": "cna",
+      "name": "CNA (Singapore)",
+      "url": "https://www.channelnewsasia.com/api/v1/rss-outbound-feed?_format=xml",
+      "format": "rss",
+      "tier": 2,
+      "owner": "mediacorp",
+      "country": "SG",
+      "pollMinutes": 10,
+      "stateFunded": true
+    },
+    {
+      "id": "scmp-world",
+      "name": "South China Morning Post – World",
+      "url": "https://www.scmp.com/rss/91/feed",
+      "format": "rss",
+      "tier": 2,
+      "owner": "alibaba",
+      "country": "HK",
+      "pollMinutes": 10
+    },
+    {
+      "id": "japantimes",
+      "name": "The Japan Times",
+      "url": "https://www.japantimes.co.jp/feed/",
+      "format": "rss",
+      "tier": 2,
+      "owner": "japantimes",
+      "country": "JP",
+      "pollMinutes": 15
+    },
+    {
+      "id": "toi-world",
+      "name": "Times of India – World",
+      "url": "https://timesofindia.indiatimes.com/rssfeeds/296589292.cms",
+      "format": "rss",
+      "tier": 2,
+      "owner": "bennett-coleman",
+      "country": "IN",
+      "pollMinutes": 10
+    },
+    {
+      "id": "hindu-intl",
+      "name": "The Hindu – International",
+      "url": "https://www.thehindu.com/news/international/feeder/default.rss",
+      "format": "rss",
+      "tier": 2,
+      "owner": "the-hindu",
+      "country": "IN",
+      "pollMinutes": 15
+    },
+    {
+      "id": "dawn",
+      "name": "Dawn (Pakistan)",
+      "url": "https://www.dawn.com/feeds/home",
+      "format": "rss",
+      "tier": 2,
+      "owner": "dawn",
+      "country": "PK",
+      "pollMinutes": 15
+    },
+    {
+      "id": "timesofisrael",
+      "name": "The Times of Israel",
+      "url": "https://www.timesofisrael.com/feed/",
+      "format": "rss",
+      "tier": 2,
+      "owner": "timesofisrael",
+      "country": "IL",
+      "pollMinutes": 10
+    },
+    {
+      "id": "arabnews",
+      "name": "Arab News",
+      "url": "https://www.arabnews.com/rss.xml",
+      "format": "rss",
+      "tier": 2,
+      "owner": "srmg",
+      "country": "SA",
+      "pollMinutes": 15,
+      "stateFunded": true
+    },
+    {
+      "id": "middleeasteye",
+      "name": "Middle East Eye",
+      "url": "https://www.middleeasteye.net/rss",
+      "format": "rss",
+      "tier": 2,
+      "owner": "middleeasteye",
+      "country": "GB",
+      "pollMinutes": 15
+    },
+    {
+      "id": "kyivindependent",
+      "name": "The Kyiv Independent",
+      "url": "https://kyivindependent.com/rss/",
+      "format": "rss",
+      "tier": 2,
+      "owner": "kyivindependent",
+      "country": "UA",
+      "pollMinutes": 10
+    },
+    {
+      "id": "africanews",
+      "name": "Africanews",
+      "url": "https://www.africanews.com/feed/rss",
+      "format": "rss",
+      "tier": 2,
+      "owner": "euronews",
+      "country": "FR",
+      "pollMinutes": 15
+    },
+    {
+      "id": "dailymaverick",
+      "name": "Daily Maverick (South Africa)",
+      "url": "https://www.dailymaverick.co.za/dmrss/",
+      "format": "rss",
+      "tier": 2,
+      "owner": "dailymaverick",
+      "country": "ZA",
+      "pollMinutes": 15
+    },
+    {
+      "id": "premiumtimes",
+      "name": "Premium Times (Nigeria)",
+      "url": "https://www.premiumtimesng.com/feed",
+      "format": "rss",
+      "tier": 2,
+      "owner": "premiumtimes",
+      "country": "NG",
+      "pollMinutes": 15
+    },
+    {
+      "id": "mercopress",
+      "name": "MercoPress (South America)",
+      "url": "https://en.mercopress.com/rss/",
+      "format": "rss",
+      "tier": 2,
+      "owner": "mercopress",
+      "country": "UY",
+      "pollMinutes": 30
+    },
+    {
+      "id": "un-news",
+      "name": "UN News",
+      "url": "https://news.un.org/feed/subscribe/en/news/all/rss.xml",
+      "format": "rss",
+      "tier": "primary",
+      "owner": "un",
+      "country": "INT",
+      "pollMinutes": 15
+    },
+    {
+      "id": "who-news",
+      "name": "WHO – News",
+      "url": "https://www.who.int/rss-feeds/news-english.xml",
+      "format": "rss",
+      "tier": "primary",
+      "owner": "who",
+      "country": "INT",
+      "pollMinutes": 30
+    },
+    {
+      "id": "gdacs",
+      "name": "GDACS – Global disaster alerts",
+      "url": "https://www.gdacs.org/xml/rss.xml",
+      "format": "rss",
+      "tier": "primary",
+      "owner": "gdacs",
+      "country": "INT",
+      "pollMinutes": 10
+    },
+    {
+      "id": "usgs-quakes",
+      "name": "USGS – Earthquakes M4.5+ (past hour)",
+      "url": "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/4.5_hour.geojson",
+      "format": "usgs-geojson",
+      "tier": "primary",
+      "owner": "usgs",
+      "country": "US",
+      "pollMinutes": 5
+    },
+    {
+      "id": "ukgov-news",
+      "name": "GOV.UK – News and communications",
+      "url": "https://www.gov.uk/search/news-and-communications.atom",
+      "format": "rss",
+      "tier": "primary",
+      "owner": "ukgov",
+      "country": "GB",
+      "pollMinutes": 15
+    },
+    {
+      "id": "us-state-press",
+      "name": "US State Department – Press releases",
+      "url": "https://www.state.gov/rss-feed/press-releases/feed/",
+      "format": "rss",
+      "tier": "primary",
+      "owner": "usgov",
+      "country": "US",
+      "pollMinutes": 15
+    },
+    {
+      "id": "whitehouse",
+      "name": "The White House – News",
+      "url": "https://www.whitehouse.gov/news/feed/",
+      "format": "rss",
+      "tier": "primary",
+      "owner": "usgov",
+      "country": "US",
+      "pollMinutes": 15
+    },
+    {
+      "id": "reddit-worldnews",
+      "name": "Reddit r/worldnews (new)",
+      "url": "https://www.reddit.com/r/worldnews/new/.rss",
+      "format": "rss",
+      "tier": "signal",
+      "owner": "reddit",
+      "country": "INT",
+      "pollMinutes": 10
+    },
+    {
+      "id": "reddit-news",
+      "name": "Reddit r/news (new)",
+      "url": "https://www.reddit.com/r/news/new/.rss",
+      "format": "rss",
+      "tier": "signal",
+      "owner": "reddit",
+      "country": "INT",
+      "pollMinutes": 10
+    }
+  ]
+}

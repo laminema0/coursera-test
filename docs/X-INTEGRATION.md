@@ -1,3 +1,6 @@
+> **Status: paused (paid milestone).** The project now runs on free sources only. See [VERIFICATION-STRATEGY.md](VERIFICATION-STRATEGY.md).
+> This X code stays in `backend/` and switches on only when `X_BEARER_TOKEN` is set.
+
 # News from X: Getting Posts from the X API into the App
 
 How the app gets news and posts from X (Twitter).

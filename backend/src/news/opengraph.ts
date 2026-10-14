@@ -74,7 +74,7 @@ function absolute(value: string | undefined, base: string): string | undefined {
   }
 }
 
-function decodeEntities(text: string): string {
+export function decodeEntities(text: string): string {
   const named: Record<string, string> = { amp: "&", lt: "<", gt: ">", quot: '"', apos: "'", nbsp: " " };
   return text.replace(/&(#x[0-9a-f]+|#\d+|[a-z]+);/gi, (whole, code: string) => {
     if (code[0] === "#") {

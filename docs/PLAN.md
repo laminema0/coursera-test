@@ -1,7 +1,7 @@
 # iOS Application — Master Plan
 
-> **Product:** a news app that brings together news from X (Twitter) and publishers.
-> How the X data is fetched is designed in **[X-INTEGRATION.md](X-INTEGRATION.md)**.
+> **Product:** a free news-verification app. Every breaking-news claim shows how many independent sources confirm it.
+> Strategy and limitations: **[VERIFICATION-STRATEGY.md](VERIFICATION-STRATEGY.md)**. English first, then German, French, Spanish and Persian.
 
 This document lists every phase of building the app, from idea to App Store and after.
 Phase 3 (Foundation) is already set up in this repository. Each phase ends with a **Definition of Done (DoD)**.

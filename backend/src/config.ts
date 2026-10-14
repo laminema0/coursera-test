@@ -40,11 +40,9 @@ export interface Config {
 
 export const defaultPrices: Prices = { postRead: 0.005, userRead: 0.01 };
 
-export function loadConfig(env: NodeJS.ProcessEnv = process.env, sourcesPath = "sources.json"): Config {
+/** X is optional (paid). With no X_BEARER_TOKEN, `xBearerToken` is empty and X ingestion stays off. */
+export function loadConfig(env: NodeJS.ProcessEnv = process.env, sourcesPath = "sources/x-accounts.json"): Config {
   const token = env.X_BEARER_TOKEN ?? "";
-  if (!token) {
-    throw new Error("X_BEARER_TOKEN is not set. See .env.example.");
-  }
   const sources = JSON.parse(readFileSync(sourcesPath, "utf8")) as { groups: SourceGroup[] };
 
   return {

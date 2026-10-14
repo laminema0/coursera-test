@@ -4,6 +4,7 @@ import type { EventsResponse } from "./events-api.ts";
 import { buildFeed } from "./feed.ts";
 import type { ArticleStore } from "./sources/article-store.ts";
 import type { NewsSource } from "./sources/types.ts";
+import { clientOf, RateLimiter } from "./rate-limit.ts";
 import type { MemoryStore } from "./store.ts";
 
 export interface ApiDeps {
@@ -16,12 +17,14 @@ export interface ApiDeps {
   /** Present only when the optional (paid) X integration is enabled. */
   xStore?: MemoryStore;
   now?: () => Date;
+  rateLimiter?: RateLimiter;
 }
 
 /** Read-only HTTP API for the app. The app never talks to news sources or X directly. */
 export function createApiServer(deps: ApiDeps): Server {
   const now = deps.now ?? (() => new Date());
   const sourcesById = new Map(deps.sources.map((s) => [s.id, s]));
+  const limiter = deps.rateLimiter ?? new RateLimiter();
 
   return createServer((request, response) => {
     const url = new URL(request.url ?? "/", "http://localhost");
@@ -31,6 +34,8 @@ export function createApiServer(deps: ApiDeps): Server {
     };
 
     if (request.method !== "GET") return send(405, { error: "method_not_allowed" });
+    const retryAfter = url.pathname === "/health" ? undefined : limiter.check(clientOf(request));
+    if (retryAfter !== undefined) return send(429, { error: "rate_limited" }, { "Retry-After": String(retryAfter) });
 
     const sinceParam = url.searchParams.get("since");
     const since = sinceParam ? new Date(sinceParam) : undefined;

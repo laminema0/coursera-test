@@ -123,3 +123,27 @@ test("numbers from social posts are shown as chatter, never as figures", () => {
   assert.deepEqual(killed.chatter[0], { value: 20, mentions: 2 });
   assert.deepEqual(withNews.chatterOnly, []);
 });
+
+test("a headline denial of a side rumour or of responsibility doesn't dispute the event", () => {
+  const quake = (extra: Article) => analyze([
+    article("j1", "usgs", "M 5.9 earthquake off Fukushima, Japan", "Magnitude 5.9 earthquake off Fukushima, Japan"),
+    article("j2", "guardian", "Earthquake off Fukushima, Japan: no tsunami expected", "A magnitude 5.9 earthquake struck off Fukushima, Japan.", "2026-10-15T10:10:00Z"),
+    extra,
+  ], sourceMap).find((e) => e.articleIds.includes(extra.id))!;
+
+  const leak = quake(article("j3", "npr", "Fukushima earthquake: plant operator denies reports of leak after quake", "The operator denied claims of a leak after the magnitude 5.9 earthquake off Fukushima, Japan.", "2026-10-15T11:00:00Z"));
+  assert.equal(leak.verification.status, "confirmed");
+  assert.equal(leak.verification.disputing, 0);
+
+  const realDenial = quake(article("j4", "npr", "Japan denies Fukushima earthquake struck, says sensors failed", "Officials denied that the earthquake off Fukushima, Japan happened.", "2026-10-15T11:00:00Z"));
+  assert.equal(realDenial.verification.status, "disputed");
+
+  const attack = [
+    article("a1", "guardian", "Shelling of Atlantis market kills 40, residents say"),
+    article("a2", "bbc-world", "Atlantis market shelling kills dozens", undefined, "2026-10-15T10:30:00Z"),
+    article("a3", "npr", "Lemurian army denies shelling Atlantis market, blames rebels", undefined, "2026-10-15T11:00:00Z"),
+  ];
+  const event = analyze(attack, sourceMap)[0]!;
+  assert.equal(event.articleIds.length, 3);
+  assert.equal(event.verification.status, "corroborated");
+});

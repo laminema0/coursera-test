@@ -9,6 +9,8 @@ struct SettingsView: View {
     var body: some View {
         Form {
             Section("General") {
+                Button("What the Colors Mean") { router.push(.statusGuide) }
+                Button("Sources") { router.push(.sources) }
                 Button("About") { router.push(.about) }
             }
 

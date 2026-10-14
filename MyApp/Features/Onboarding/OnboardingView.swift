@@ -7,12 +7,31 @@ struct OnboardingView: View {
         let symbol: String
         let title: LocalizedStringKey
         let message: LocalizedStringKey
+        var showsLegend = false
     }
 
     private let pages: [Page] = [
-        Page(symbol: "sparkles", title: "Welcome", message: "A short line that explains the main value of the app."),
-        Page(symbol: "bolt.fill", title: "Fast", message: "Describe the second key benefit here."),
-        Page(symbol: "lock.shield", title: "Private", message: "Explain how user data is protected.")
+        Page(
+            symbol: "newspaper",
+            title: "Breaking News You Can Check",
+            message: "Every story shows how many independent sources back it, and changes as new reports come in."
+        ),
+        Page(
+            symbol: "circle.lefthalf.filled",
+            title: "Colors Show Trust",
+            message: "Grey means only social posts so far. Blue means an official source confirmed it.",
+            showsLegend: true
+        ),
+        Page(
+            symbol: "person.2.wave.2",
+            title: "Social Posts Never Count",
+            message: "Posts appear early as unverified chatter, in purple. Thirty copies of one wire story count once."
+        ),
+        Page(
+            symbol: "lock.shield",
+            title: "Free and Private",
+            message: "No account, no tracking. Articles open at the publisher."
+        )
     ]
 
     let onFinish: () -> Void
@@ -22,19 +41,8 @@ struct OnboardingView: View {
         VStack(spacing: Spacing.lg) {
             TabView(selection: $index) {
                 ForEach(Array(pages.enumerated()), id: \.element.id) { offset, page in
-                    VStack(spacing: Spacing.md) {
-                        Image(systemName: page.symbol)
-                            .font(.system(size: 72))
-                            .foregroundStyle(Color.dsBrand)
-                            .accessibilityHidden(true)
-                        Text(page.title).font(.dsLargeTitle)
-                        Text(page.message)
-                            .font(.dsBody)
-                            .foregroundStyle(Color.dsTextSecondary)
-                            .multilineTextAlignment(.center)
-                    }
-                    .padding(Spacing.xl)
-                    .tag(offset)
+                    OnboardingPage(symbol: page.symbol, title: page.title, message: page.message, showsLegend: page.showsLegend)
+                        .tag(offset)
                 }
             }
             .tabViewStyle(.page(indexDisplayMode: .always))
@@ -56,6 +64,45 @@ struct OnboardingView: View {
     }
 }
 
+private struct OnboardingPage: View {
+    let symbol: String
+    let title: LocalizedStringKey
+    let message: LocalizedStringKey
+    let showsLegend: Bool
+
+    var body: some View {
+        // Scrolls so the legend fits at large text sizes.
+        ScrollView {
+            VStack(spacing: Spacing.md) {
+                Image(systemName: symbol)
+                    .font(.system(size: showsLegend ? 48 : 72))
+                    .foregroundStyle(Color.dsBrand)
+                    .accessibilityHidden(true)
+                Text(title)
+                    .font(.dsLargeTitle)
+                    .multilineTextAlignment(.center)
+                Text(message)
+                    .font(.dsBody)
+                    .foregroundStyle(Color.dsTextSecondary)
+                    .multilineTextAlignment(.center)
+                if showsLegend {
+                    StatusLegend()
+                        .padding(.top, Spacing.xs)
+                }
+            }
+            .padding(Spacing.xl)
+            .padding(.bottom, Spacing.xl)
+        }
+        .scrollBounceBehavior(.basedOnSize)
+    }
+}
+
 #Preview {
     OnboardingView {}
+}
+
+#Preview("Dark, large text") {
+    OnboardingView {}
+        .preferredColorScheme(.dark)
+        .dynamicTypeSize(.accessibility1)
 }

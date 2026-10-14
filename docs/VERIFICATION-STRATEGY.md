@@ -31,6 +31,9 @@ Paid APIs (X, news APIs, AI APIs) are a **later milestone**, if subscriptions ev
  ⑤ Numbers  → range · most-reported · latest official · timeline          ✅ built
  +  Coverage → how many outlets/countries worldwide (GDELT, free)         ✅ built
  +  First report → who reported first, and when                          ✅ built
+ +  Ranking  → importance + "breaking" flag (still developing)            ✅ built
+ +  Chatter  → numbers social posts mention, shown apart from figures     ✅ built
+ +  Track record → each source's early numbers vs final official figure   ✅ built (learning)
             ▼
  iOS app (no accounts, no tracking)
 ```
@@ -138,6 +141,10 @@ Cross-language matching uses numbers, places and dates (language-independent) pl
 
 "Independent" = different owner; wire copies ("— Reuters") count once as the wire; near-identical text counts once.
 
+**"Which number is most spoken about":** two separate answers, never mixed:
+- *Figures*: the value reported by the most independent news/official sources (verified side).
+- *Chatter*: the values social posts mention most (unverified side), e.g. "on social media: 20 (2 posts), 50 (1 post)".
+
 **Numbers:** each source's *latest* value counts (early counts get replaced as sources update). We show the range, the value reported by the most independent sources, and the latest value from officials (or attributed to them: "police said…").
 
 ## Status
@@ -153,6 +160,12 @@ Cross-language matching uses numbers, places and dates (language-independent) pl
 | 7 | Speed vs. reliability | 🟩 designed |
 | 8 | Privacy | 🟩 decided |
 | 9 | Languages | 🟩 prepared |
+
+## Quality checks
+- Backend: 61 tests (`npm test`), including realistic breaking-news fixtures and hard negatives (same place, different story).
+- Swift: `scripts/swift-linux-check.sh` compiles and tests all non-UI Swift code with the official Swift 6.1 image. It caught a real compile error.
+- End-to-end: local RSS feeds → collector → analysis → `/v1/events` verified (statuses, numbers, filters, saved state).
+- Not yet checked against live feeds: this environment blocks news sites. Run `npm run check-sources` and `npm run analyze` on your machine.
 
 ## Milestones that need money (not now)
 - X API (`docs/X-INTEGRATION.md`; code is ready and switches on with `X_BEARER_TOKEN`)

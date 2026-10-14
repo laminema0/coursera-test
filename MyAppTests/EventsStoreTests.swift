@@ -81,7 +81,11 @@ struct EventsStoreTests {
         let repository = ScriptedEventsRepository([.success(sample)])
         let store = EventsStore(repository: repository)
         let task = Task { await store.autoRefresh(every: .milliseconds(10)) }
-        try await Task.sleep(for: .milliseconds(200))
+        // Wait for two refreshes instead of a fixed time: busy CI machines can be slow.
+        let deadline = ContinuousClock.now + .seconds(5)
+        while repository.calls < 2 && ContinuousClock.now < deadline {
+            try await Task.sleep(for: .milliseconds(10))
+        }
         task.cancel()
         await task.value
         let callsAtCancel = repository.calls

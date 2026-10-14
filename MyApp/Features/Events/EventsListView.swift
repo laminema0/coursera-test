@@ -7,7 +7,12 @@ struct NewsTab: View {
     let router: Router
 
     var body: some View {
-        NewsTabStack(store: EventsStore(repository: container.eventsRepository, cache: container.eventsCache), router: router)
+        let store = EventsStore(
+            repository: container.eventsRepository,
+            cache: container.eventsCache,
+            alertState: StoryAlertState(store: container.keyValueStore)
+        )
+        NewsTabStack(store: store, router: router)
     }
 }
 

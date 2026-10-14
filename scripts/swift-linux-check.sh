@@ -9,9 +9,9 @@ IMAGE="${SWIFT_IMAGE:-swift:6.1-noble}"
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 
-# Files that import SwiftUI/UIKit can't build on Linux; everything else must.
+# Files that import Apple-only UI or system frameworks can't build on Linux; everything else must.
 mkdir -p "$WORK/Sources/MyApp" "$WORK/Tests/MyAppTests"
-grep -rL --include='*.swift' -E '^import (SwiftUI|UIKit)' "$ROOT/MyApp" | xargs -I{} cp {} "$WORK/Sources/MyApp/"
+grep -rL --include='*.swift' -E '^import (SwiftUI|UIKit|BackgroundTasks|UserNotifications)' "$ROOT/MyApp" | xargs -I{} cp {} "$WORK/Sources/MyApp/"
 cp "$ROOT"/MyAppTests/*.swift "$WORK/Tests/MyAppTests/"
 cp -R "$ROOT/Packages/Core" "$WORK/Core" && rm -rf "$WORK/Core/.build"
 

@@ -5,6 +5,7 @@ import SwiftUI
 struct MyAppApp: App {
     @State private var container: AppContainer
     @State private var appState: AppState
+    @Environment(\.scenePhase) private var scenePhase
 
     init() {
         let container = AppContainer.live()
@@ -19,6 +20,14 @@ struct MyAppApp: App {
             RootView()
                 .environment(container)
                 .environment(appState)
+        }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .background {
+                BackgroundRefresh.schedule()
+            }
+        }
+        .backgroundTask(.appRefresh(BackgroundRefresh.taskIdentifier)) { [update = container.backgroundEventsUpdate] in
+            await BackgroundRefresh.run(update)
         }
     }
 }

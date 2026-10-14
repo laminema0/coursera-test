@@ -39,11 +39,18 @@ final class EventsStore {
 
     private let repository: EventsRepository
     private let cache: EventsCaching?
+    private let alertState: StoryAlertState?
     private let now: @Sendable () -> Date
 
-    init(repository: EventsRepository, cache: EventsCaching? = nil, now: @escaping @Sendable () -> Date = { .now }) {
+    init(
+        repository: EventsRepository,
+        cache: EventsCaching? = nil,
+        alertState: StoryAlertState? = nil,
+        now: @escaping @Sendable () -> Date = { .now }
+    ) {
         self.repository = repository
         self.cache = cache
+        self.alertState = alertState
         self.now = now
     }
 
@@ -113,6 +120,8 @@ final class EventsStore {
             isShowingCachedEvents = false
             if statusFilter == nil {
                 cache?.save(response)
+                // Seen on screen, so background refresh won't alert about it later.
+                _ = alertState?.process(response.events)
             }
         } catch is CancellationError {
             return

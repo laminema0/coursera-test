@@ -56,6 +56,15 @@ final class AppContainer {
         )
     }
 
+    /// Everything a background refresh needs, without the main actor.
+    var backgroundEventsUpdate: BackgroundEventsUpdate {
+        BackgroundEventsUpdate(
+            repository: eventsRepository,
+            cache: eventsCache,
+            alertState: StoryAlertState(store: keyValueStore)
+        )
+    }
+
     /// Used by SwiftUI previews and tests: no network, no disk.
     static func preview() -> AppContainer {
         let configuration = AppConfiguration.preview

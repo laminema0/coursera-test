@@ -105,3 +105,20 @@ test("a denial of a side claim inside the story doesn't dispute the event", () =
   assert.equal(quake.verification.status, "confirmed");
   assert.equal(quake.verification.disputing, 0);
 });
+
+test("numbers from social posts are shown as chatter, never as figures", () => {
+  const items = [
+    article("c1", "reddit", "Explosion at Atlantis Riverside port, at least 20 dead"),
+    article("c2", "reddit", "Atlantis port explosion: 20 killed according to people there", undefined, "2026-10-15T10:01:00Z"),
+    article("c3", "reddit", "Riverside port explosion Atlantis, 50 dead??", undefined, "2026-10-15T10:02:00Z"),
+  ];
+  const onlySocial = analyze(items, sourceMap)[0]!;
+  assert.deepEqual(onlySocial.numbers, [], "no verified figures from social posts");
+  assert.deepEqual(onlySocial.chatterOnly, [{ kind: "killed", values: [{ value: 20, mentions: 2 }, { value: 50, mentions: 1 }] }]);
+
+  const withNews = analyze([...items, article("n1", "guardian", "Explosion at Atlantis Riverside port kills 8, officials say", undefined, "2026-10-15T10:30:00Z")], sourceMap)[0]!;
+  const killed = withNews.numbers.find((n) => n.kind === "killed")!;
+  assert.equal(killed.mostReported.value, 8);
+  assert.deepEqual(killed.chatter[0], { value: 20, mentions: 2 });
+  assert.deepEqual(withNews.chatterOnly, []);
+});

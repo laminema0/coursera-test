@@ -49,14 +49,15 @@ struct MockEventsRepository: EventsRepository {
                     status: status, reason: reason, confirming: confirming, disputing: disputing,
                     primary: primary, tier1: tier1, signals: signals, stateMediaOwnCountry: 0
                 ),
-                numbers: numbers, statements: statements, coverage: nil, origins: origins
+                numbers: numbers, chatterOnly: [], statements: statements, coverage: nil, origins: origins
             )
         }
         let killed = NumberSummary(
             kind: .killed, min: 5, max: 15,
             mostReported: .init(value: 14, origins: 2),
             latestOfficial: .init(value: 15, at: .now.addingTimeInterval(-600), sourceId: "dw-en"),
-            timeline: []
+            timeline: [],
+            chatter: [ChatterValue(value: 20, mentions: 3)]
         )
         return [
             event(

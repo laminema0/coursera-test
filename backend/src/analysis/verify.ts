@@ -44,6 +44,14 @@ export interface NumberSummary {
   latestOfficial?: { value: number; at: string; sourceId: string };
   /** Each origin's reports over time, oldest first. */
   timeline: NumberReport[];
+  /** Numbers mentioned in social posts (unverified chatter), most mentioned first. Never part of the figures above. */
+  chatter: { value: number; mentions: number }[];
+}
+
+/** Numbers that so far appear only in social posts. */
+export interface ChatterOnly {
+  kind: CountKind;
+  values: { value: number; mentions: number }[];
 }
 
 export interface StatementSummary {
@@ -59,6 +67,8 @@ export interface VerifiedEvent extends NewsEvent {
   /** Earliest report from a news or official source (social posts excluded). */
   firstReport?: { sourceId: string; articleId: string; at: string };
   numbers: NumberSummary[];
+  /** Kinds of numbers mentioned only on social media so far (unverified). */
+  chatterOnly: ChatterOnly[];
   statements: StatementSummary[];
 }
 
@@ -105,11 +115,13 @@ export function verifyEvent(
     .filter((a): a is Article => a !== undefined)
     .sort((a, b) => a.publishedAt.localeCompare(b.publishedAt))[0];
 
+  const numbers = summarizeNumbers(event.origins, articles, claims, sources);
   return {
     ...event,
     verification,
     firstReport: firstReport && { sourceId: firstReport.sourceIds[0] ?? "", articleId: firstReport.id, at: firstReport.publishedAt },
-    numbers: summarizeNumbers(event.origins, articles, claims, sources),
+    numbers: numbers.summaries,
+    chatterOnly: numbers.chatterOnly,
     statements: summarizeStatements(counted, claims),
   };
 }
@@ -151,10 +163,21 @@ function summarizeNumbers(
   articles: Map<string, Article>,
   claims: Map<string, ArticleClaims>,
   sources: Map<string, NewsSource>,
-): NumberSummary[] {
+): { summaries: NumberSummary[]; chatterOnly: ChatterOnly[] } {
   const byKind = new Map<CountKind, NumberReport[]>();
+  const chatter = new Map<CountKind, Map<number, number>>();
   for (const origin of origins) {
-    if (origin.kind === "signal") continue; // social posts never count toward numbers
+    if (origin.kind === "signal") {
+      // Social posts never count toward the figures, but "what number are people talking about" is shown separately.
+      for (const articleId of origin.articleIds) {
+        for (const n of claims.get(articleId)?.numbers ?? []) {
+          const counts = chatter.get(n.kind) ?? new Map<number, number>();
+          counts.set(n.value, (counts.get(n.value) ?? 0) + 1);
+          chatter.set(n.kind, counts);
+        }
+      }
+      continue;
+    }
     for (const articleId of origin.articleIds) {
       const article = articles.get(articleId);
       const articleClaims = claims.get(articleId);
@@ -178,7 +201,13 @@ function summarizeNumbers(
     }
   }
 
-  return [...byKind.entries()].map(([kind, reports]) => {
+  const chatterFor = (kind: CountKind) =>
+    [...(chatter.get(kind) ?? new Map<number, number>()).entries()]
+      .map(([value, mentions]) => ({ value, mentions }))
+      .sort((a, b) => b.mentions - a.mentions || b.value - a.value)
+      .slice(0, 3);
+
+  const summaries: NumberSummary[] = [...byKind.entries()].map(([kind, reports]) => {
     reports.sort((a, b) => a.at.localeCompare(b.at));
     // Each origin's latest number: early counts are replaced as that source updates.
     const latestPerOrigin = new Map<string, NumberReport>();
@@ -202,8 +231,16 @@ function summarizeNumbers(
       mostReported: { value: mostValue, origins: mostVote.origins },
       latestOfficial: official && { value: official.value, at: official.at, sourceId: official.sourceId },
       timeline: reports,
+      chatter: chatterFor(kind),
     };
-  }).sort((a, b) => KIND_ORDER.indexOf(a.kind) - KIND_ORDER.indexOf(b.kind));
+  });
+
+  // Kinds only social posts mention: no verified figures yet, just chatter.
+  const chatterOnly = [...chatter.keys()]
+    .filter((kind) => !byKind.has(kind))
+    .sort((a, b) => KIND_ORDER.indexOf(a) - KIND_ORDER.indexOf(b))
+    .map((kind) => ({ kind, values: chatterFor(kind) }));
+  return { summaries: summaries.sort((a, b) => KIND_ORDER.indexOf(a.kind) - KIND_ORDER.indexOf(b.kind)), chatterOnly };
 }
 
 const KIND_ORDER: CountKind[] = ["killed", "injured", "missing", "arrested", "evacuated", "displaced", "magnitude"];

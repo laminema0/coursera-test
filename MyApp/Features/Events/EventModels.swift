@@ -23,6 +23,8 @@ struct NewsEvent: Identifiable, Decodable, Hashable, Sendable {
     let firstReport: FirstReport?
     let verification: Verification
     let numbers: [NumberSummary]
+    /// Numbers that so far appear only in social posts (unverified chatter).
+    let chatterOnly: [ChatterOnly]
     let statements: [StatementSummary]
     /// Worldwide coverage (GDELT): how far the story has spread. Not confirmation.
     let coverage: Coverage?
@@ -102,8 +104,20 @@ struct NumberSummary: Decodable, Hashable, Sendable {
     let mostReported: MostReported
     let latestOfficial: Official?
     let timeline: [Report]
+    /// Numbers social posts mention for this kind (unverified), most mentioned first.
+    let chatter: [ChatterValue]
 
     var isRange: Bool { min != max }
+}
+
+struct ChatterValue: Decodable, Hashable, Sendable {
+    let value: Double
+    let mentions: Int
+}
+
+struct ChatterOnly: Decodable, Hashable, Sendable {
+    let kind: CountKind
+    let values: [ChatterValue]
 }
 
 struct StatementSummary: Decodable, Hashable, Sendable {

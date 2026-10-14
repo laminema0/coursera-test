@@ -37,7 +37,11 @@ export interface ApiEvent {
     most_reported: { value: number; origins: number };
     latest_official?: { value: number; at: string; source_id: string };
     timeline: { value: number; qualifier: string; attribution: string; official: boolean; source_id: string; at: string }[];
+    /** Numbers social posts mention for this kind (unverified), most mentioned first. */
+    chatter: { value: number; mentions: number }[];
   }[];
+  /** Kinds of numbers that only social posts mention so far (unverified). */
+  chatter_only: { kind: string; values: { value: number; mentions: number }[] }[];
   statements: { speaker: string; asserts: number; denies: number; confirms: number }[];
   /** Worldwide coverage from GDELT (uncurated outlets): how far the story has spread, not confirmation. */
   coverage?: { outlets: number; countries: number; first_seen_at?: string; checked_at: string };
@@ -90,7 +94,9 @@ export function toApiEvents(
         most_reported: n.mostReported,
         latest_official: n.latestOfficial && { value: n.latestOfficial.value, at: n.latestOfficial.at, source_id: n.latestOfficial.sourceId },
         timeline: n.timeline.map((r) => ({ value: r.value, qualifier: r.qualifier, attribution: r.attribution, official: r.official, source_id: r.sourceId, at: r.at })),
+        chatter: n.chatter,
       })),
+      chatter_only: e.chatterOnly,
       statements: e.statements.map((s) => ({ speaker: s.speaker, asserts: s.asserts, denies: s.denies, confirms: s.confirms })),
       coverage: (() => {
         const c = coverageOf(e.id);

@@ -19,8 +19,9 @@ struct EventsTests {
         "numbers": [{ "kind": "killed", "min": 5, "max": 15, "most_reported": { "value": 14, "origins": 2 },
           "latest_official": { "value": 15, "at": "2026-10-14T11:10:00.000Z", "source_id": "dw" },
           "timeline": [{ "value": 5, "qualifier": "atLeast", "attribution": "official", "official": true,
-            "source_id": "bbc-world", "at": "2026-10-14T09:40:00.000Z" }] },
-          { "kind": "magnitude", "min": 6.1, "max": 6.1, "most_reported": { "value": 6.1, "origins": 4 }, "timeline": [] }],
+            "source_id": "bbc-world", "at": "2026-10-14T09:40:00.000Z" }], "chatter": [{ "value": 20, "mentions": 2 }] },
+          { "kind": "magnitude", "min": 6.1, "max": 6.1, "most_reported": { "value": 6.1, "origins": 4 }, "timeline": [], "chatter": [] }],
+        "chatter_only": [],
         "statements": [],
         "coverage": { "outlets": 87, "countries": 23, "first_seen_at": "2026-10-14T09:15:00.000Z",
           "checked_at": "2026-10-14T12:00:00.000Z" },
@@ -31,7 +32,8 @@ struct EventsTests {
         "id": "e2", "title": "Something new", "first_seen_at": "2026-10-14T09:10:00Z", "last_updated_at": "2026-10-14T09:10:00Z",
         "key_terms": [], "importance": 1, "breaking": false, "new_origins_last_hour": 0,
         "verification": { "status": "some-future-status", "reason": "", "confirming": 0, "disputing": 0,
-          "primary": 0, "tier1": 0, "signals": 1, "state_media_own_country": 0 }, "numbers": [], "statements": [], "origins": []
+          "primary": 0, "tier1": 0, "signals": 1, "state_media_own_country": 0 }, "numbers": [],
+        "chatter_only": [{ "kind": "missing", "values": [{ "value": 4, "mentions": 3 }] }], "statements": [], "origins": []
       }]
     }
     """
@@ -48,6 +50,8 @@ struct EventsTests {
         #expect(quake.coverage?.outlets == 87)
         #expect(quake.firstReport?.sourceName == "USGS")
         #expect(quake.breaking)
+        #expect(quake.numbers.first?.chatter.first?.mentions == 2)
+        #expect(response.events.last?.chatterOnly.first?.kind == .missing)
         #expect(response.events.last?.coverage == nil)
         #expect(response.events.last?.verification.status == .unverified, "unknown status falls back safely")
     }

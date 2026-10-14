@@ -14,12 +14,20 @@ struct NewsEvent: Identifiable, Decodable, Hashable, Sendable {
     let firstSeenAt: Date
     let lastUpdatedAt: Date
     let keyTerms: [String]
+    /// Earliest report from a news or official source (social posts excluded).
+    let firstReport: FirstReport?
     let verification: Verification
     let numbers: [NumberSummary]
     let statements: [StatementSummary]
     /// Worldwide coverage (GDELT): how far the story has spread. Not confirmation.
     let coverage: Coverage?
     let origins: [EventOrigin]
+}
+
+struct FirstReport: Decodable, Hashable, Sendable {
+    let sourceId: String
+    let sourceName: String
+    let at: Date
 }
 
 struct Coverage: Decodable, Hashable, Sendable {

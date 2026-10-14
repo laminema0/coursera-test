@@ -42,7 +42,7 @@ struct MockEventsRepository: EventsRepository {
         ) -> NewsEvent {
             NewsEvent(
                 id: id, title: title, firstSeenAt: .now.addingTimeInterval(-7_200), lastUpdatedAt: .now.addingTimeInterval(-300),
-                keyTerms: [], verification: Verification(
+                keyTerms: [], firstReport: nil, verification: Verification(
                     status: status, reason: reason, confirming: confirming, disputing: disputing,
                     primary: primary, tier1: tier1, signals: signals, stateMediaOwnCountry: 0
                 ),

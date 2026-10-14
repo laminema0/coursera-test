@@ -56,6 +56,8 @@ export interface StatementSummary {
 
 export interface VerifiedEvent extends NewsEvent {
   verification: Verification;
+  /** Earliest report from a news or official source (social posts excluded). */
+  firstReport?: { sourceId: string; articleId: string; at: string };
   numbers: NumberSummary[];
   statements: StatementSummary[];
 }
@@ -96,9 +98,15 @@ export function verifyEvent(
     retracting,
   });
 
+  const firstReport = counted
+    .flatMap((o) => o.articleIds.map((id) => articles.get(id)))
+    .filter((a): a is Article => a !== undefined)
+    .sort((a, b) => a.publishedAt.localeCompare(b.publishedAt))[0];
+
   return {
     ...event,
     verification,
+    firstReport: firstReport && { sourceId: firstReport.sourceIds[0] ?? "", articleId: firstReport.id, at: firstReport.publishedAt },
     numbers: summarizeNumbers(event.origins, articles, claims, sources),
     statements: summarizeStatements(counted, claims),
   };

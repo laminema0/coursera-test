@@ -15,6 +15,7 @@ export interface ApiEvent {
   first_seen_at: string;
   last_updated_at: string;
   key_terms: string[];
+  first_report?: { source_id: string; source_name: string; at: string };
   verification: {
     status: string;
     reason: string;
@@ -60,6 +61,11 @@ export function toApiEvents(
       first_seen_at: e.firstSeenAt,
       last_updated_at: e.lastUpdatedAt,
       key_terms: e.keyTerms,
+      first_report: e.firstReport && {
+        source_id: e.firstReport.sourceId,
+        source_name: sources.get(e.firstReport.sourceId)?.name ?? e.firstReport.sourceId,
+        at: e.firstReport.at,
+      },
       verification: {
         status: e.verification.status,
         reason: e.verification.reason,

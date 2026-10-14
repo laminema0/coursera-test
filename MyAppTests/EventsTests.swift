@@ -13,6 +13,7 @@ struct EventsTests {
         "id": "e1", "title": "Turkey earthquake: Strong quake hits Malatya province",
         "first_seen_at": "2026-10-14T09:10:00.000Z", "last_updated_at": "2026-10-14T11:10:00.000Z",
         "key_terms": ["earthquake", "turkey", "malatya"],
+        "first_report": { "source_id": "usgs", "source_name": "USGS", "at": "2026-10-14T09:10:00.000Z" },
         "verification": { "status": "confirmed", "reason": "Confirmed by an official source, plus 5 independent sources.",
           "confirming": 6, "disputing": 0, "primary": 1, "tier1": 3, "signals": 1, "state_media_own_country": 0 },
         "numbers": [{ "kind": "killed", "min": 5, "max": 15, "most_reported": { "value": 14, "origins": 2 },
@@ -44,6 +45,7 @@ struct EventsTests {
         #expect(quake.numbers.last?.kind == .magnitude)
         #expect(quake.origins.first?.kind == .primary)
         #expect(quake.coverage?.outlets == 87)
+        #expect(quake.firstReport?.sourceName == "USGS")
         #expect(response.events.last?.coverage == nil)
         #expect(response.events.last?.verification.status == .unverified, "unknown status falls back safely")
     }

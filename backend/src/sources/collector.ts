@@ -106,7 +106,10 @@ export class Collector {
 
   #storeEntries(source: NewsSource, entries: FeedEntry[], now: Date): number {
     let added = 0;
+    const oldest = new Date(now.getTime() - this.#d.retentionHours * 3_600_000).toISOString();
     for (const entry of entries) {
+      // Some feeds list items that are weeks old; they are not news anymore.
+      if (entry.publishedAt && entry.publishedAt < oldest) continue;
       const url = canonicalizeUrl(entry.url);
       if (!url) continue;
       const id = storyIdFor(url);

@@ -12,6 +12,7 @@ test("earthquake with USGS report is confirmed", () => {
   assert.equal(quake.verification.status, "confirmed");
   assert.equal(quake.verification.primary, 1);
   assert.equal(quake.verification.signals, 1);
+  assert.equal(quake.firstReport?.sourceId, "usgs", "Reddit was not first among real sources");
 });
 
 test("earthquake numbers: range, most reported (latest per source), latest official", () => {

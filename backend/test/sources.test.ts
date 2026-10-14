@@ -159,3 +159,14 @@ test("the English source list is well-formed", () => {
     assert.ok(s.owner && s.country && s.pollMinutes >= 5, `${s.id} fields`);
   }
 });
+
+test("skips feed items that are already older than the retention window", async () => {
+  const clock = new Clock("2026-10-20T10:00:00Z");
+  const feeds = fakeFeeds({ "https://a.test/feed": () => new Response(RSS) });
+  const store = new ArticleStore();
+  const collector = new Collector({ sources: [source("a", "https://a.test/feed")], language: "en", store, fetch: feeds.fetch, now: clock.now, retentionHours: 72 });
+  const report = await collector.runCycle();
+  // The dated item (Oct 14) is six days old; the undated one is kept with the fetch time.
+  assert.equal(report.newArticles, 1);
+  assert.equal([...store.articles.values()][0]?.title, "No date");
+});

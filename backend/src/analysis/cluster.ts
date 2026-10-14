@@ -1,6 +1,6 @@
 import type { Article, NewsSource } from "../sources/types.ts";
 import { originOf, type OriginKind } from "./origin.ts";
-import { addInto, disjoint, frozenNormSq, incidentTypes, nameTerms, overlapOf, pairContainment, type SparseVector, TfIdf, tokenize, weightedTerms } from "./text.ts";
+import { addInto, disjoint, frozenNormSq, incidentTypes, nameTerms, overlapOf, pairContainment, type SparseVector, TfIdf, tokenize, weightedCounts, weightedTerms } from "./text.ts";
 
 export interface ClusterOptions {
   /** Minimum cosine similarity to join an event. */
@@ -61,8 +61,9 @@ export function clusterArticles(
   options: ClusterOptions = defaultClusterOptions,
 ): NewsEvent[] {
   const sorted = [...articles].sort((a, b) => a.publishedAt.localeCompare(b.publishedAt) || a.id.localeCompare(b.id));
-  const termCounts = sorted.map((a) => weightedTerms(a.title, a.summary));
-  const typesOf = sorted.map((a) => incidentTypes(tokenize(a.title)));
+  const titleTokens = sorted.map((a) => tokenize(a.title));
+  const termCounts = sorted.map((a, i) => weightedCounts(titleTokens[i]!, tokenize(a.summary ?? "")));
+  const typesOf = titleTokens.map((tokens) => incidentTypes(tokens));
   const tfidf = new TfIdf();
   for (const counts of termCounts) tfidf.addDocument(counts.keys());
 
@@ -74,7 +75,7 @@ export function clusterArticles(
   const distinctive = (term: string) => tfidf.documentFrequency(term) <= maxDf;
 
   sorted.forEach((article, i) => {
-    const vector = articleVector(tfidf, termCounts[i]!, article);
+    const vector = articleVector(tfidf, termCounts[i]!, titleTokens[i]!, article);
     if (vector.size === 0) return;
     const at = Date.parse(article.publishedAt);
 
@@ -144,7 +145,7 @@ export function eventsFromGroups(
   const byId = new Map(articles.map((a) => [a.id, a]));
   return groups.map((ids) => {
     const members = ids.map((id) => byId.get(id)!).sort((a, b) => a.publishedAt.localeCompare(b.publishedAt) || a.id.localeCompare(b.id));
-    const vectors = members.map((a) => articleVector(tfidf, termCounts.get(a.id)!, a));
+    const vectors = members.map((a) => articleVector(tfidf, termCounts.get(a.id)!, tokenize(a.title), a));
     const centroid: SparseVector = new Map();
     for (const v of vectors) addInto(centroid, v);
     let centroidNormSq = 0;
@@ -163,39 +164,48 @@ export function eventsFromGroups(
  */
 function mergeSimilar(events: Working[], options: ClusterOptions, distinctive: (term: string) => boolean): Working[] {
   const windowMs = options.windowHours * 3_600_000;
-  let alive = [...events].sort((a, b) => a.firstAt - b.firstAt);
+  const alive = [...events].sort((a, b) => a.firstAt - b.firstAt);
+  const dead = new Set<number>();
+  const index = new Map<string, Set<number>>();
+  alive.forEach((event, i) => {
+    for (const term of topTerms(event.centroid, 10)) if (distinctive(term)) addToIndex(index, term, i);
+  });
 
-  for (let round = 0; round < 3; round += 1) {
-    const index = new Map<string, Set<number>>();
-    const tops = alive.map((event) => topTerms(event.centroid, 10).filter(distinctive));
-    tops.forEach((terms, i) => {
-      for (const term of terms) addToIndex(index, term, i);
-    });
-
-    const dead = new Set<number>();
-    let merges = 0;
-    alive.forEach((event, i) => {
-      if (dead.has(i)) return;
+  // Round 1 looks at every event; later rounds only at events that just grew, since nothing else changed.
+  let todo = alive.map((_, i) => i);
+  for (let round = 0; round < 3 && todo.length > 0; round += 1) {
+    const grown = new Set<number>();
+    for (const i of todo) {
+      if (dead.has(i)) continue;
+      const event = alive[i]!;
       const overlap = new Map<number, number>();
-      for (const term of tops[i]!) {
-        for (const j of index.get(term) ?? []) if (j > i && !dead.has(j)) overlap.set(j, (overlap.get(j) ?? 0) + 1);
+      for (const term of topTerms(event.centroid, 10)) {
+        if (!distinctive(term)) continue;
+        for (const j of index.get(term) ?? []) {
+          // Round 1 compares each pair once (j > i); later rounds compare a grown event with everything.
+          if (j !== i && !dead.has(j) && (round > 0 || j > i)) overlap.set(j, (overlap.get(j) ?? 0) + 1);
+        }
       }
       for (const j of topKeys(overlap, MAX_CANDIDATES)) {
+        if (dead.has(j) || dead.has(i)) continue;
         const other = alive[j]!;
         if (other.firstAt - event.lastAt > windowMs || event.firstAt - other.lastAt > windowMs) continue;
         if (disjoint(event.types, other.types)) continue;
         const { dot, shared } = overlapOf(event.centroid, other.centroid);
         if (shared < 2) continue;
         if (mergeSimilarity(event, other, dot, options.mergeThreshold) < options.mergeThreshold) continue;
-        absorb(event, other);
-        dead.add(j);
-        merges += 1;
+        // The earlier event absorbs the later one (keeps ids stable).
+        const [keep, drop] = i < j ? [i, j] : [j, i];
+        absorb(alive[keep]!, alive[drop]!);
+        dead.add(drop);
+        grown.add(keep);
+        for (const term of topTerms(alive[keep]!.centroid, 10)) if (distinctive(term)) addToIndex(index, term, keep);
+        if (drop === i) break;
       }
-    });
-    alive = alive.filter((_, i) => !dead.has(i));
-    if (merges === 0) break;
+    }
+    todo = [...grown].filter((i) => !dead.has(i)).sort((a, b) => a - b);
   }
-  return alive;
+  return alive.filter((_, i) => !dead.has(i));
 }
 
 function absorb(target: Working, other: Working): void {
@@ -210,34 +220,53 @@ function absorb(target: Working, other: Working): void {
   target.lastAt = Math.max(target.lastAt, other.lastAt);
 }
 
+/** Headline-vs-headline containment is discounted more than full text: headlines are short. */
+const HEADLINE_WEIGHT = 0.5;
+
 /** Names weigh more than common words of the same rarity (see `nameTerms`). */
 const NAME_BOOST = 1.5;
 
-function articleVector(tfidf: TfIdf, counts: Map<string, number>, article: Article): SparseVector {
-  const vector = tfidf.vector(counts);
-  for (const term of nameTerms(article.title, article.summary)) {
-    const weight = vector.get(term);
-    if (weight !== undefined) vector.set(term, weight * NAME_BOOST);
-  }
+function articleVector(tfidf: TfIdf, counts: Map<string, number>, titleTokens: string[], article: Article): SparseVector {
+  const names = nameTerms(article.title, article.summary);
+  const boost = (v: SparseVector) => {
+    for (const term of names) {
+      const weight = v.get(term);
+      if (weight !== undefined) v.set(term, weight * NAME_BOOST);
+    }
+    return v;
+  };
+  const vector = boost(tfidf.vector(counts));
+  const titleCounts = new Map<string, number>();
+  for (const t of titleTokens) titleCounts.set(t, (titleCounts.get(t) ?? 0) + 1);
+  HEADLINE.set(vector, boost(tfidf.vector(titleCounts)));
   return vector;
 }
 
+/** Each article vector's headline-only vector: headlines name the event, summaries add (diluting) detail. */
+const HEADLINE = new WeakMap<SparseVector, SparseVector>();
+
+function headlineContainment(a: SparseVector, b: SparseVector): number {
+  const ha = HEADLINE.get(a);
+  const hb = HEADLINE.get(b);
+  return ha && hb ? pairContainment(ha, hb) : 0;
+}
+
 /** Events scored in full per article (or per event in the merge pass). Keeps big, busy news days fast. */
-const MAX_CANDIDATES = 25;
+const MAX_CANDIDATES = 12;
 
 function frozenCosine(a: SparseVector, b: SparseVector): number {
   const d = overlapOf(a, b).dot;
   return d === 0 ? 0 : d / Math.sqrt(frozenNormSq(a) * frozenNormSq(b));
 }
 
-function topKeys(scores: Map<number, number>, n: number): number[] {
-  const entries = [...scores.entries()];
-  if (entries.length > n) entries.sort((a, b) => b[1] - a[1] || a[0] - b[0]).length = n;
-  return entries.map(([key]) => key).sort((a, b) => a - b);
+function topKeys(scores: Map<number, number>, n: number): Iterable<number> {
+  if (scores.size <= n) return scores.keys();
+  const entries = [...scores.entries()].sort((a, b) => b[1] - a[1] || a[0] - b[0]);
+  return entries.slice(0, n).map(([key]) => key).sort((a, b) => a - b);
 }
 
 /** How many recent member articles to compare with: keeps scoring cost flat for big events. */
-const RECENT_MEMBERS = 10;
+const RECENT_MEMBERS = 6;
 
 /**
  * Cosine with the event's word profile, or (discounted) containment of the shorter text in one of its articles.
@@ -249,7 +278,9 @@ function eventSimilarity(vector: SparseVector, dotWithCentroid: number, event: W
   let best = dotWithCentroid / Math.sqrt(frozenNormSq(vector) * event.centroidNormSq);
   const members = event.vectors;
   for (let k = Math.max(0, members.length - RECENT_MEMBERS); k < members.length; k += 1) {
+    if (best >= 0.6) break; // containment scores can't go higher
     best = Math.max(best, 0.6 * pairContainment(vector, members[k]!));
+    if (best < HEADLINE_WEIGHT) best = Math.max(best, HEADLINE_WEIGHT * headlineContainment(vector, members[k]!));
   }
   return best;
 }
@@ -262,7 +293,7 @@ function mergeSimilarity(a: Working, b: Working, dotOfCentroids: number, enough:
   const ys = b.vectors.slice(-RECENT_MEMBERS / 2);
   for (const x of xs) {
     for (const y of ys) {
-      best = Math.max(best, 0.6 * pairContainment(x, y));
+      best = Math.max(best, 0.6 * pairContainment(x, y), HEADLINE_WEIGHT * headlineContainment(x, y));
       if (best >= enough) return best;
     }
   }

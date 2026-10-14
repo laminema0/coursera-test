@@ -9,7 +9,7 @@ import { analyze } from "../src/analysis/verify.ts";
 import { buildCorpus, events, splitOf } from "./dataset/index.ts";
 import { evaluate, KINDS, type SplitReport, STATUSES } from "./metrics.ts";
 import { loadSources } from "./sources.ts";
-import { syntheticCorpus } from "./synthetic.ts";
+import { bcubed, syntheticCorpus } from "./synthetic.ts";
 
 const args = process.argv.slice(2);
 const showTest = args.includes("--show-test");
@@ -84,12 +84,14 @@ section("Denial/retraction flags", visible.claims.flagErrors, (f) => `${f.expect
 let perfOk = true;
 if (!args.includes("--no-perf")) {
   const synthetic = syntheticCorpus(20_000, [...sources.values()]);
-  analyze(synthetic.slice(0, 2_000), sources); // warm up the JIT
+  analyze(synthetic.articles.slice(0, 2_000), sources); // warm up the JIT
   const started = performance.now();
-  const out = analyze(synthetic, sources);
+  const out = analyze(synthetic.articles, sources);
   const ms = performance.now() - started;
   perfOk = ms < 5_000;
-  console.log(`\nPerformance: ${synthetic.length} synthetic articles → ${out.length} events in ${(ms / 1000).toFixed(2)} s (budget 5 s) ${perfOk ? "OK" : "TOO SLOW"}`);
+  const b3 = bcubed(out.map((e) => e.articleIds), synthetic.eventOf);
+  console.log(`\nPerformance: ${synthetic.articles.length} synthetic articles → ${out.length} events in ${(ms / 1000).toFixed(2)} s (budget 5 s) ${perfOk ? "OK" : "TOO SLOW"}`);
+  console.log(`  synthetic grouping (sanity check at scale): B³ precision ${pct(b3.precision)}, recall ${pct(b3.recall)}`);
 }
 
 if (jsonOut) {

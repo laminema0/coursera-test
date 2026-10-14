@@ -97,3 +97,11 @@ test("headline denials: contradictions count, references to an earlier denial do
   assert.equal(extractClaims("RSF denies shelling El Fasher market, blames Sudanese army").responsibilityDenial, true);
   assert.equal(extractClaims("Nigeria denies petroleum minister has resigned").responsibilityDenial, false);
 });
+
+test("plural verbs, recovered bodies, 'on board' and 'arrest of'", () => {
+  assert.deepEqual(numbers("Flash floods in eastern Spain kill at least 5, officials say"), ["killed=5(atLeast):official"]);
+  assert.deepEqual(numbers("Lagos collapse", "LASEMA said six bodies had been recovered."), ["killed=6:official"]);
+  assert.deepEqual(numbers("All 18 aboard killed in Nepal plane crash, officials say"), ["killed=18:official"]);
+  assert.deepEqual(numbers("Plane crash", "The plane crashed, killing all 18 people on board, officials said."), ["killed=18:official"]);
+  assert.deepEqual(numbers("Iran claims arrest of 12 'Mossad agents'"), ["arrested=12:official"]);
+});

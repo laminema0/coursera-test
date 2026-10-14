@@ -87,3 +87,36 @@ test("a wire's own account and credits to that wire elsewhere are one origin", a
   assert.deepEqual(own, { key: "wire:ap", kind: "wire" });
   assert.deepEqual(credited, own);
 });
+
+const at = (minutes: number) => new Date(Date.parse("2026-10-14T10:00:00Z") + minutes * 60_000).toISOString();
+const item = (id: string, source: string, minutes: number, title: string, summary?: string) =>
+  ({ id, url: `https://${source}.test/${id}`, title, summary, publishedAt: at(minutes), fetchedAt: at(minutes), language: "en", sourceIds: [source] });
+
+test("machine titles, demonyms and synonym families normalize", () => {
+  assert.deepEqual(tokenize("M 6.8 - 41 km SSW of Arequipa, Peru"), ["magnitude", "arequipa", "peru", "6.8"]);
+  assert.deepEqual(tokenize("Orange earthquake alert (Magnitude 6.8M, Depth:35km)"), ["orange", "earthquake", "alert", "magnitude", "6.8"]);
+  assert.deepEqual(tokenize("Kenyan police fire tear gas at protesters"), ["kenya", "police", "fire", "tear", "gas", "protest"]);
+  assert.deepEqual(tokenize("Typhoon forces evacuation; 2,000 evacuated"), ["cyclone", "force", "evacuat", "evacuat"]);
+});
+
+test("same place, different incident: a ferry sinking doesn't join the earthquake", () => {
+  const items = [
+    item("q1", "bbc-world", 0, "Indonesia earthquake: 3 dead in Mamuju on Sulawesi island", "A magnitude 6.2 earthquake struck West Sulawesi, Indonesia's disaster agency said."),
+    item("q2", "guardian", 30, "Sulawesi earthquake kills 7 in Indonesia", "Seven people were killed in Mamuju on Sulawesi after the earthquake."),
+    item("f1", "npr", 300, "Ferry capsizes off Indonesia's Sulawesi island, 30 missing", "A ferry capsized off Sulawesi, Indonesia, with 30 people missing, the rescue agency said."),
+    item("f2", "dw", 330, "Indonesia ferry disaster: 9 dead off Sulawesi", "Nine people died after the ferry capsized off Sulawesi island in Indonesia."),
+  ];
+  const events = clusterArticles(items, sourceMap);
+  const eventOf = (id: string) => events.find((e) => e.articleIds.includes(id))!;
+  assert.equal(eventOf("q1"), eventOf("q2"));
+  assert.equal(eventOf("f1"), eventOf("f2"));
+  assert.notEqual(eventOf("q1"), eventOf("f1"));
+});
+
+test("a big event doesn't absorb short unrelated posts made of common words", () => {
+  const big = Array.from({ length: 30 }, (_, i) =>
+    item(`b${i}`, i % 2 ? "guardian" : "bbc-world", i * 10, `Hurricane Lorena: people killed as storm hits Florida, officials said (${i})`, `Officials said people were killed and homes damaged as Hurricane Lorena hit Florida, update ${i}.`));
+  const post = item("p1", "reddit", 400, "People in our town said officials killed the park plan");
+  const events = clusterArticles([...big, post], sourceMap);
+  assert.notEqual(events.find((e) => e.articleIds.includes("p1")), events.find((e) => e.articleIds.includes("b0")));
+});

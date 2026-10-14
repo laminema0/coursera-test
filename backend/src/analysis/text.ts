@@ -23,17 +23,21 @@ const STOP_WORDS = new Set(
  */
 export function tokenize(text: string): string[] {
   const decimals: string[] = [];
-  const words = text
-    .toLowerCase()
-    .replace(/(?<![\p{L}\p{N}])m\s?(\d\.\d)(?![\p{N}])/gu, "magnitude $1")
-    .replace(/(\d\.\d)m\b/g, "$1")
-    .replace(/\d+\.\d+/g, (d) => {
-      decimals.push(d);
-      return " ";
-    })
+  let lower = text.toLowerCase();
+  if (/\d\.\d/.test(lower)) {
+    lower = lower
+      .replace(/(?<![\p{L}\p{N}])m\s?(\d\.\d)(?![\p{N}])/gu, "magnitude $1")
+      .replace(/(\d\.\d)m\b/g, "$1")
+      .replace(/\d+\.\d+/g, (d) => {
+        decimals.push(d);
+        return " ";
+      });
+  }
+  const words = lower
     .replace(/['’]s\b/g, "")
     .split(/[^\p{L}\p{N}]+/u)
-    .filter((w) => w.length > 1 && !STOP_WORDS.has(w) && !/^\d+$/.test(w));
+    // Whole numbers and number+unit ("35km", "60mph") say nothing about which story it is.
+    .filter((w) => w.length > 1 && !STOP_WORDS.has(w) && !/^\d+(?:[a-z]{1,3})?$/.test(w));
   return [...words.map(normalize), ...decimals];
 }
 
@@ -228,9 +232,11 @@ export function addInto(target: SparseVector, v: SparseVector): void {
 /** TF-IDF over a fixed corpus. Rare words (names, places) count more than common ones. */
 export class TfIdf {
   readonly #df = new Map<string, number>();
+  readonly #idf = new Map<string, number>();
   #docs = 0;
 
   addDocument(terms: Iterable<string>): void {
+    this.#idf.clear();
     this.#docs += 1;
     for (const term of new Set(terms)) this.#df.set(term, (this.#df.get(term) ?? 0) + 1);
   }
@@ -244,7 +250,12 @@ export class TfIdf {
   }
 
   idf(term: string): number {
-    return Math.log((this.#docs + 1) / ((this.#df.get(term) ?? 0) + 1)) + 1;
+    let idf = this.#idf.get(term);
+    if (idf === undefined) {
+      idf = Math.log((this.#docs + 1) / ((this.#df.get(term) ?? 0) + 1)) + 1;
+      this.#idf.set(term, idf);
+    }
+    return idf;
   }
 
   /** Weighted term counts → TF-IDF vector. */
@@ -261,25 +272,29 @@ export class TfIdf {
  * Title Case headlines ("Earthquake in Peru Kills at Least 17"), where capitals carry no information.
  */
 export function nameTerms(title: string, summary?: string): Set<string> {
-  const names = new Set<string>();
+  const found: string[] = [];
   const scan = (sentence: string) => {
     const words = sentence.split(/[\s,;()"“”‘]+/).filter(Boolean);
     words.forEach((word, i) => {
       if (i === 0 || /[:.!?]$/.test(words[i - 1]!)) return;
-      if (/^[A-Z][\p{Ll}]/u.test(word) || /^[A-Z]{2,6}$/.test(word)) for (const t of tokenize(word)) names.add(t);
+      if (/^[A-Z][\p{Ll}]/u.test(word) || /^[A-Z]{2,6}$/.test(word)) found.push(word);
     });
   };
   const titleWords = title.split(/\s+/).filter((w) => w.length > 3);
   const titleCase = titleWords.length > 2 && titleWords.filter((w) => /^[A-Z]/.test(w)).length / titleWords.length > 0.7;
   if (!titleCase) scan(title);
   for (const sentence of (summary ?? "").split(/(?<=[.!?])\s+/)) scan(sentence);
-  return names;
+  return new Set(tokenize(found.join(" ")));
 }
 
 /** Title words count double: headlines carry the event; summaries add context. */
 export function weightedTerms(title: string, summary?: string): Map<string, number> {
+  return weightedCounts(tokenize(title), tokenize(summary ?? ""));
+}
+
+export function weightedCounts(titleTokens: string[], summaryTokens: string[]): Map<string, number> {
   const counts = new Map<string, number>();
-  for (const t of tokenize(title)) counts.set(t, (counts.get(t) ?? 0) + 2);
-  for (const t of tokenize(summary ?? "")) counts.set(t, (counts.get(t) ?? 0) + 1);
+  for (const t of titleTokens) counts.set(t, (counts.get(t) ?? 0) + 2);
+  for (const t of summaryTokens) counts.set(t, (counts.get(t) ?? 0) + 1);
   return counts;
 }

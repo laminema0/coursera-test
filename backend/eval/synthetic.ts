@@ -30,7 +30,13 @@ const VERBS = ["announces", "delays", "approves", "rejects", "unveils", "cancels
 const OBJECTS = ["plan", "deal", "merger", "budget", "project", "final", "tariff", "licence", "contract", "report", "exhibition", "season",
   "satellite", "app", "bond sale", "pay rise", "stadium", "festival", "rail link", "reform"];
 
-export function syntheticCorpus(total: number, sources: NewsSource[], seed = 42): Article[] {
+export interface SyntheticCorpus {
+  articles: Article[];
+  /** Which generated event (or one-off story) each article belongs to. */
+  eventOf: Map<string, string>;
+}
+
+export function syntheticCorpus(total: number, sources: NewsSource[], seed = 42): SyntheticCorpus {
   const random = rng(seed);
   const pick = <T>(list: T[]): T => list[Math.floor(random() * list.length)]!;
   const place = () => {
@@ -44,13 +50,17 @@ export function syntheticCorpus(total: number, sources: NewsSource[], seed = 42)
   const start = Date.parse("2026-10-11T00:00:00Z");
   const spanMs = 72 * 3_600_000;
   const articles: Article[] = [];
+  const eventOf = new Map<string, string>();
+  let label = "";
   const add = (title: string, summary: string, at: number) => {
     const i = articles.length;
+    eventOf.set(`syn-${i}`, label || `one-off-${i}`);
     const iso = new Date(at).toISOString();
     articles.push({ id: `syn-${i}`, url: `https://syn.test/${i}`, title, summary, publishedAt: iso, fetchedAt: iso, language: "en", sourceIds: [pick(feeds).id] });
   };
 
   while (articles.length < total) {
+    label = "";
     if (random() < 0.4) {
       // One-off story: each has its own rare words, like real headlines about different things.
       const story = `${pick(SUBJECTS)} ${pick(VERBS)} ${pick(OBJECTS)}`;
@@ -64,6 +74,7 @@ export function syntheticCorpus(total: number, sources: NewsSource[], seed = 42)
     const type = pick(TYPES);
     const at = start + random() * spanMs;
     const size = 2 + Math.floor(random() * 11);
+    label = `event-${articles.length}`;
     for (let k = 0; k < size && articles.length < total; k += 1) {
       const n = 1 + Math.floor(random() * 60);
       const name = pick(names);
@@ -74,5 +85,25 @@ export function syntheticCorpus(total: number, sources: NewsSource[], seed = 42)
       );
     }
   }
-  return articles;
+  return { articles, eventOf };
+}
+
+/** B-cubed precision/recall of predicted groups against the generator's own labels. */
+export function bcubed(groups: string[][], eventOf: Map<string, string>): { precision: number; recall: number } {
+  const size = new Map<string, number>();
+  for (const label of eventOf.values()) size.set(label, (size.get(label) ?? 0) + 1);
+  let p = 0;
+  let r = 0;
+  let n = 0;
+  for (const group of groups) {
+    const counts = new Map<string, number>();
+    for (const id of group) counts.set(eventOf.get(id)!, (counts.get(eventOf.get(id)!) ?? 0) + 1);
+    for (const id of group) {
+      const same = counts.get(eventOf.get(id)!)!;
+      p += same / group.length;
+      r += same / size.get(eventOf.get(id)!)!;
+      n += 1;
+    }
+  }
+  return { precision: p / n, recall: r / n };
 }

@@ -62,7 +62,9 @@ const OUTCOMES: [RegExp, CountKind][] = [
 ];
 const OUTCOME_WORDS = "killed|(?:confirmed |found |shot )?dead|died|dies|deaths?|drowned|injured|wounded|hurt|injuries|missing|unaccounted for|arrested|detained|evacuated|displaced|homeless";
 
-const COUNT_PATTERN = new RegExp(String.raw`\b${QUAL}${NUM}\s+${WHO}${AUX}(${OUTCOME_WORDS})\b`, "gi");
+// "18 people on board were killed", "All 18 aboard killed"
+const ON_BOARD = String.raw`(?:(?:aboard|on board)\s+)?`;
+const COUNT_PATTERN = new RegExp(String.raw`\b${QUAL}${NUM}\s+${WHO}${ON_BOARD}${AUX}(${OUTCOME_WORDS})\b`, "gi");
 const TOLL_VERBS = "rises|rose|risen|climbs|climbed|reaches|reached|jumps|jumped|stands|stood|increases|increased|hits|hit|soars|soared|grows|grew";
 // Each toll pattern captures (qualifier, number). "Toll" alone means the death toll in news copy ("toll climbs to 8").
 const TOLL_PATTERNS = [
@@ -75,7 +77,12 @@ const TOLL_PATTERNS = [
 const VERB_KINDS: [RegExp, CountKind][] = [
   [/^kill/i, "killed"], [/^(injur|wound)/i, "injured"], [/^(arrest|detain)/i, "arrested"], [/^displac/i, "displaced"], [/^evacuat/i, "evacuated"],
 ];
-const VERB_COUNT_PATTERN = new RegExp(String.raw`\b(kills|killing|injures|injuring|wounds|wounding|arrests|arresting|detains|detaining|displaces|displacing)\s+${QUAL}${NUM}`, "gi");
+// "kills 12" and, with a plural subject, "Floods kill at least 5".
+const VERB_COUNT_PATTERN = new RegExp(String.raw`\b(kill|kills|killing|injure|injures|injuring|wound|wounds|wounding|arrests|arresting|detains|detaining|displace|displaces|displacing)\s+(?:all\s+)?${QUAL}${NUM}`, "gi");
+// "six bodies had been recovered", "12 bodies were found"
+const BODIES_PATTERN = new RegExp(String.raw`\b${QUAL}${NUM}\s+bodies\s+(?:(?:had|have|has)\s+been\s+|were\s+|was\s+)?(?:recovered|found|pulled|retrieved)`, "gi");
+// "Iran claims arrest of 12 'Mossad agents'"
+const ARREST_OF_PATTERN = new RegExp(String.raw`\barrests?\s+of\s+${QUAL}${NUM}`, "gi");
 // "killed at least 5 people" (a person word is required, so "killed 2 days ago" doesn't match)…
 const PAST_VERB_COUNT_PATTERN = new RegExp(String.raw`\b(killed|injured|wounded|arrested|detained|displaced|evacuated)\s+${QUAL}${NUM}\s+(?:${PERSONS})\b`, "gi");
 // …unless an auxiliary makes it a verb ("has killed 2") or the clause ends right after the number ("…and injured 112.").
@@ -96,7 +103,7 @@ const EVACUATION_PATTERNS = [
 ];
 
 const HAS_NUMBER = new RegExp(String.raw`\d|\b(?:${Object.keys(WORD_NUMBERS).join("|")})\b`, "i");
-const HAS_OUTCOME = /kill|dead|died|dies|death|drown|injur|wound|hurt|missing|unaccounted|arrest|detain|custody|evacuat|displac|homeless/i;
+const HAS_OUTCOME = /kill|dead|died|dies|death|drown|injur|wound|hurt|missing|unaccounted|arrest|detain|custody|evacuat|displac|homeless|bodies/i;
 
 // Background ("including one in 2016 that killed 42 people") and corrected figures ("An earlier version said two died")
 // are not the event's numbers.
@@ -110,7 +117,7 @@ const MEDIA_ACRONYMS = new Set(["AP", "AFP", "BBC", "CNN", "NBC", "CBS", "ABC", 
 const WITNESS = /\b(witness(?:es)?|residents|locals|bystanders|eyewitness(?:es)?|activists|social media|videos? (?:posted|shared))\b/i;
 const MEDIA = /\b((?<!\b(?:been|was|were|is|are|be|being)\s)reported|media|according to (?:local |state )?(?:reports|radio|television|tv|newspaper)|Reuters|Associated Press|AFP|news agency)\b/i;
 // A sentence carries an attribution: a speech verb, or a headline credit ("… - USGS", "… — emergency services").
-const ATTRIBUTION_VERB = /\b(said|says|say|according to|confirmed|told|reported|reports|announced|estimated)\b/i;
+const ATTRIBUTION_VERB = /\b(said|says|say|claims|claimed|according to|confirmed|told|reported|reports|announced|estimated)\b/i;
 const HEADLINE_CREDIT = /\s[-–—]\s+(?:[\w.'’]+\s?){1,4}$/;
 // "Iran says…", "Qatar says…": a country or institution named as the speaker is the government's voice.
 const NAMED_SPEAKER = /^(?:[A-Z][a-z]+\s){1,2}(?:says|said|claims|confirms)\b/;
@@ -129,6 +136,7 @@ const STATEMENT_VERBS: Record<string, StatementClaim["stance"]> = {
   confirms: "confirms", confirmed: "confirms",
   denies: "denies", denied: "denies", rejects: "denies", rejected: "denies", refutes: "denies", refuted: "denies",
 };
+const STATEMENT_VERB = new RegExp(String.raw`\b(?:${Object.keys(STATEMENT_VERBS).join("|")})\b`);
 const STATEMENT_PATTERN = new RegExp(String.raw`([A-Za-z][\w.'’-]*(?:\s+[A-Za-z][\w.'’-]*){0,5})\s+(${Object.keys(STATEMENT_VERBS).join("|")})\b`, "g");
 const ROLE_WORDS = /\b(minist(?:er|ry)|president|prime minister|chancellor|police|government|spokes(?:man|woman|person)|army|military|agency|governor|mayor|white house|kremlin|pentagon|officials?)\b/i;
 const SPEAKER_STOP = new Set(["the", "a", "an", "and", "but", "that", "who", "which", "as", "after", "before", "when", "while", "of", "in", "on", "at", "to", "for", "with", "has", "have", "had", "reports", "report", "it", "this"]);
@@ -176,11 +184,13 @@ export function extractClaims(title: string, summary?: string): ArticleClaims {
       }
       if (/toll/i.test(sentence)) for (const pattern of TOLL_PATTERNS) for (const m of sentence.matchAll(pattern)) add("killed", m[2]!, m[1], m);
       if (/evacuat|flee/i.test(sentence)) for (const pattern of EVACUATION_PATTERNS) for (const m of sentence.matchAll(pattern)) add("evacuated", m[2]!, m[1], m);
+      if (/bodies/i.test(sentence)) for (const m of sentence.matchAll(BODIES_PATTERN)) add("killed", m[2]!, m[1], m);
+      if (/arrests? of/i.test(sentence)) for (const m of sentence.matchAll(ARREST_OF_PATTERN)) add("arrested", m[2]!, m[1], m);
       if (/lives/i.test(sentence)) for (const m of sentence.matchAll(LIVES_PATTERN)) add("killed", m[2] ?? m[4]!, m[1] ?? m[3], m);
       if (/\d\.\d|magnitude/i.test(sentence)) for (const m of sentence.matchAll(MAGNITUDE_PATTERN)) add("magnitude", m[1] ?? m[2] ?? m[3]!, undefined, m);
     }
 
-    for (const m of sentence.matchAll(STATEMENT_PATTERN)) {
+    if (STATEMENT_VERB.test(sentence)) for (const m of sentence.matchAll(STATEMENT_PATTERN)) {
       const speaker = cleanSpeaker(m[1]!);
       if (!speaker) continue;
       const verb = m[2]!.toLowerCase();

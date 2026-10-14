@@ -4,3 +4,6 @@ APP_ENVIRONMENT = release
 APP_BUNDLE_ID = $(APP_BUNDLE_ID_BASE)
 API_BASE_URL = https:/$()/api.example.com/v1
 USE_MOCK_DATA = NO
+
+// Your own signing team, bundle ID or server (not committed; see docs/INSTALL-ON-IPHONE.md). Last, so it wins.
+#include? "Local.xcconfig"

@@ -13,6 +13,7 @@ xcodegen generate      # creates MyApp.xcodeproj from project.yml
 open MyApp.xcodeproj   # run the "MyApp" scheme on a simulator
 ```
 The Debug build uses **mock data**, so it runs without a backend.
+To install on your own iPhone with a free Apple ID, follow **[docs/INSTALL-ON-IPHONE.md](docs/INSTALL-ON-IPHONE.md)**.
 
 ## Environments
 | Configuration | Scheme | Bundle ID | Mock data |
@@ -34,6 +35,8 @@ Set API URLs and names in `Configs/*.xcconfig`. Don't put secrets there.
   filter chips, "Breaking" marker, status trail; pull to refresh and auto refresh every minute.
 - **Event detail**: status and reason, counts, numbers (most reported, range, latest official, timeline; social chatter apart in purple),
   who said what, status history, sources by origin. Articles open in Safari inside the app.
+- **Offline and alerts**: the last stories are cached and shown at launch; background refresh posts local
+  notifications when a story starts breaking or becomes confirmed or disputed (Settings switch).
 - **Sources**: tier, owner, health and track record. Status colors live in `Packages/DesignSystem` (`TrustStatus`, `VerificationBadge`).
 
 ## Adding a Feature

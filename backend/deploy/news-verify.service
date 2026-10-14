@@ -1,7 +1,7 @@
 # systemd service for the backend. Install:
 #   sudo cp deploy/news-verify.service /etc/systemd/system/
 #   sudo systemctl daemon-reload && sudo systemctl enable --now news-verify
-#   journalctl -u news-verify -f        # logs
+#   journalctl -u news-verify -f -o cat | jq .     # logs (JSON lines)
 [Unit]
 Description=News verification backend (free sources)
 After=network-online.target
@@ -12,9 +12,12 @@ Type=simple
 User=newsverify
 WorkingDirectory=/opt/news-verify/backend
 EnvironmentFile=-/opt/news-verify/backend/.env
-ExecStart=/usr/bin/node src/main.ts
+ExecStart=/usr/bin/node --disable-warning=ExperimentalWarning src/main.ts
 Restart=always
 RestartSec=10
+# SIGTERM lets the running cycle finish and closes the database; give it time before SIGKILL.
+KillSignal=SIGTERM
+TimeoutStopSec=60
 # Hardening: the service only needs its own data folder.
 NoNewPrivileges=true
 ProtectSystem=strict

@@ -1,0 +1,10 @@
+node_modules
+data
+test
+scripts
+deploy
+.env
+.env.*
+*.md
+Dockerfile
+docker-compose.yml

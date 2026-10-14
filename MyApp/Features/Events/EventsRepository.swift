@@ -10,7 +10,7 @@ struct LiveEventsRepository: EventsRepository {
     var limit = 200
 
     func fetchEvents(status: VerificationStatus?) async throws -> EventsResponse {
-        var query = [URLQueryItem(name: "limit", value: String(limit))]
+        var query = [URLQueryItem(name: "limit", value: String(limit)), URLQueryItem(name: "sort", value: "importance")]
         if let status {
             query.append(URLQueryItem(name: "status", value: status.rawValue))
         }
@@ -42,7 +42,8 @@ struct MockEventsRepository: EventsRepository {
         ) -> NewsEvent {
             NewsEvent(
                 id: id, title: title, firstSeenAt: .now.addingTimeInterval(-7_200), lastUpdatedAt: .now.addingTimeInterval(-300),
-                keyTerms: [], firstReport: nil, verification: Verification(
+                keyTerms: [], importance: Double(confirming), breaking: status == .confirmed || status == .corroborated,
+                newOriginsLastHour: 0, firstReport: nil, verification: Verification(
                     status: status, reason: reason, confirming: confirming, disputing: disputing,
                     primary: primary, tier1: tier1, signals: signals, stateMediaOwnCountry: 0
                 ),

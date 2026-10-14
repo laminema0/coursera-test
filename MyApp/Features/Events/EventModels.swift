@@ -14,6 +14,11 @@ struct NewsEvent: Identifiable, Decodable, Hashable, Sendable {
     let firstSeenAt: Date
     let lastUpdatedAt: Date
     let keyTerms: [String]
+    /// Higher = more important right now (sources, momentum, casualties, official alerts, recency).
+    let importance: Double
+    /// Developing story: new in the last 6 hours and still gaining sources or carrying official/casualty news.
+    let breaking: Bool
+    let newOriginsLastHour: Int
     /// Earliest report from a news or official source (social posts excluded).
     let firstReport: FirstReport?
     let verification: Verification

@@ -1,3 +1,4 @@
+import { rankEvent } from "./analysis/rank.ts";
 import type { VerifiedEvent } from "./analysis/verify.ts";
 import type { Coverage } from "./sources/gdelt.ts";
 import type { Article, NewsSource } from "./sources/types.ts";
@@ -15,6 +16,9 @@ export interface ApiEvent {
   first_seen_at: string;
   last_updated_at: string;
   key_terms: string[];
+  importance: number;
+  breaking: boolean;
+  new_origins_last_hour: number;
   first_report?: { source_id: string; source_name: string; at: string };
   verification: {
     status: string;
@@ -55,12 +59,15 @@ export function toApiEvents(
 ): EventsResponse {
   return {
     generated_at: now.toISOString(),
-    events: events.map((e) => ({
+    events: events.map((e) => ({ e, rank: rankEvent(e, articles, now) })).map(({ e, rank }) => ({
       id: e.id,
       title: e.title,
       first_seen_at: e.firstSeenAt,
       last_updated_at: e.lastUpdatedAt,
       key_terms: e.keyTerms,
+      importance: rank.importance,
+      breaking: rank.breaking,
+      new_origins_last_hour: rank.newOriginsLastHour,
       first_report: e.firstReport && {
         source_id: e.firstReport.sourceId,
         source_name: sources.get(e.firstReport.sourceId)?.name ?? e.firstReport.sourceId,

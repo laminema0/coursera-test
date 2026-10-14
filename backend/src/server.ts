@@ -60,9 +60,13 @@ export function createApiServer(deps: ApiDeps): Server {
         const result = deps.events?.();
         if (!result) return send(503, { error: "not_ready" }, { "Retry-After": "30" });
         const status = url.searchParams.get("status");
+        const sort = url.searchParams.get("sort") ?? "importance";
+        const breakingOnly = url.searchParams.get("breaking") === "true";
         const events = result.events
           .filter((e) => !status || e.verification.status === status)
+          .filter((e) => !breakingOnly || e.breaking)
           .filter((e) => !since || e.last_updated_at > since.toISOString())
+          .sort((a, b) => (sort === "recent" ? b.last_updated_at.localeCompare(a.last_updated_at) : b.importance - a.importance))
           .slice(0, limit);
         return send(200, { ...result, events }, { "Cache-Control": "public, max-age=30" });
       }

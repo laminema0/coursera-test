@@ -12,7 +12,7 @@ struct EventsTests {
       "events": [{
         "id": "e1", "title": "Turkey earthquake: Strong quake hits Malatya province",
         "first_seen_at": "2026-10-14T09:10:00.000Z", "last_updated_at": "2026-10-14T11:10:00.000Z",
-        "key_terms": ["earthquake", "turkey", "malatya"],
+        "key_terms": ["earthquake", "turkey", "malatya"], "importance": 9.4, "breaking": true, "new_origins_last_hour": 2,
         "first_report": { "source_id": "usgs", "source_name": "USGS", "at": "2026-10-14T09:10:00.000Z" },
         "verification": { "status": "confirmed", "reason": "Confirmed by an official source, plus 5 independent sources.",
           "confirming": 6, "disputing": 0, "primary": 1, "tier1": 3, "signals": 1, "state_media_own_country": 0 },
@@ -29,7 +29,7 @@ struct EventsTests {
           "source_id": "usgs", "source_name": "USGS", "published_at": "2026-10-14T09:10:00.000Z" }] }]
       }, {
         "id": "e2", "title": "Something new", "first_seen_at": "2026-10-14T09:10:00Z", "last_updated_at": "2026-10-14T09:10:00Z",
-        "key_terms": [], "verification": { "status": "some-future-status", "reason": "", "confirming": 0, "disputing": 0,
+        "key_terms": [], "importance": 1, "breaking": false, "new_origins_last_hour": 0, "verification": { "status": "some-future-status", "reason": "", "confirming": 0, "disputing": 0,
           "primary": 0, "tier1": 0, "signals": 1, "state_media_own_country": 0 }, "numbers": [], "statements": [], "origins": []
       }]
     }
@@ -46,6 +46,7 @@ struct EventsTests {
         #expect(quake.origins.first?.kind == .primary)
         #expect(quake.coverage?.outlets == 87)
         #expect(quake.firstReport?.sourceName == "USGS")
+        #expect(quake.breaking)
         #expect(response.events.last?.coverage == nil)
         #expect(response.events.last?.verification.status == .unverified, "unknown status falls back safely")
     }

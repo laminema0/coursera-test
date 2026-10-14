@@ -59,6 +59,9 @@ const OUTCOME_WORDS = "killed|dead|died|dies|deaths?|injured|wounded|hurt|injuri
 const COUNT_PATTERN = new RegExp(String.raw`\b${QUAL}${NUM}\s+${WHO}${AUX}(${OUTCOME_WORDS})\b`, "gi");
 const TOLL_PATTERN = new RegExp(String.raw`\bdeath toll\s+(?:has\s+)?(?:rises|rose|risen|climbs|climbed|reaches|reached|jumps|jumped|stands|stood|increases|increased|hits|hit)?\s*(?:to|at)?\s*${QUAL}${NUM}`, "gi");
 const VERB_COUNT_PATTERN = new RegExp(String.raw`\b(kills|killing|injures|injuring|wounds|wounding)\s+${QUAL}${NUM}`, "gi");
+// "killed at least 5 people" (a person word is required, so "killed 2 days ago" doesn't match).
+const PAST_VERB_COUNT_PATTERN = new RegExp(String.raw`\b(killed|injured|wounded)\s+${QUAL}${NUM}\s+(?:people|persons|civilians|children|students|soldiers|officers|others|residents|migrants|workers|passengers)\b`, "gi");
+const LIVES_PATTERN = new RegExp(String.raw`\b(?:claimed|claiming|claims|cost|costing)\s+(?:the\s+)?${QUAL}${NUM}\s+lives\b|\b${QUAL}${NUM}\s+${WHO}(?:have\s+|had\s+)?lost\s+their\s+lives\b`, "gi");
 const MAGNITUDE_PATTERN = /\b(?:magnitude(?:-|\s+)(?:of\s+)?(\d(?:\.\d)?)|(\d\.\d)(?:-|\s+)magnitude|M\s?(\d\.\d)\b)/gi;
 
 const OFFICIAL = /\b(police|officials?|authorit(?:y|ies)|ministry|minister|government|governor|mayor|agency|department|spokes(?:man|woman|person)|coroner|hospital|health (?:ministry|officials)|fire (?:service|department)|army|military|civil defen[cs]e|disaster (?:agency|management)|AFAD|FEMA|Environment Agency|state media)\b/i;
@@ -110,6 +113,10 @@ export function extractClaims(title: string, summary?: string): ArticleClaims {
       const kind: CountKind = m[1]!.toLowerCase().startsWith("kill") ? "killed" : "injured";
       add(kind, m[3]!, m[2], m[0]);
     }
+    for (const m of sentence.matchAll(PAST_VERB_COUNT_PATTERN)) {
+      add(m[1]!.toLowerCase() === "killed" ? "killed" : "injured", m[3]!, m[2], m[0]);
+    }
+    for (const m of sentence.matchAll(LIVES_PATTERN)) add("killed", m[2] ?? m[4]!, m[1] ?? m[3], m[0]);
     for (const m of sentence.matchAll(MAGNITUDE_PATTERN)) add("magnitude", m[1] ?? m[2] ?? m[3]!, undefined, m[0]);
 
     for (const m of sentence.matchAll(STATEMENT_PATTERN)) {

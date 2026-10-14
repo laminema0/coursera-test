@@ -51,3 +51,11 @@ test("speaker keys match the same speaker across different phrasings", () => {
   assert.equal(speakerKeyOf("The finance ministry"), "finance ministry");
   assert.equal(speakerKeyOf("Columbus police chief"), "columbus police");
 });
+
+test("verb-first and 'lives' phrasings", () => {
+  assert.deepEqual(numbers("Gunman killed at least 5 people at a festival, police said"), ["killed=5(atLeast):official"]);
+  assert.deepEqual(numbers("Floods have claimed 12 lives across the region"), ["killed=12:unattributed"]);
+  assert.deepEqual(numbers("More than 20 people have lost their lives in the storm, the agency said"), ["killed=20(moreThan):official"]);
+  assert.deepEqual(numbers("Suspect was killed 2 days ago in a raid"), []);
+  assert.deepEqual(numbers("Attack wounded 30 civilians"), ["injured=30:unattributed"]);
+});

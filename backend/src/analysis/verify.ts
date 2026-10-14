@@ -1,6 +1,7 @@
 import type { Article, NewsSource } from "../sources/types.ts";
 import { type ArticleClaims, type CountKind, extractClaims, type NumberClaim, type Qualifier } from "./claims.ts";
 import { mentionsCountry } from "./countries.ts";
+import { tokenize } from "./text.ts";
 import { clusterArticles, type ClusterOptions, defaultClusterOptions, type EventOrigin, type NewsEvent } from "./cluster.ts";
 
 export type VerificationStatus = "unverified" | "reported" | "corroborated" | "confirmed" | "disputed" | "retracted";
@@ -94,11 +95,10 @@ export function verifyEvent(
   const eventText = event.articleIds.map((id) => `${articles.get(id)?.title ?? ""} ${articles.get(id)?.summary ?? ""}`).join(" ");
   const ownCountryStateMedia = event.origins.filter((o) => isOwnCountryStateMedia(o, eventText, sources));
   const counted = event.origins.filter((o) => o.kind !== "signal" && !ownCountryStateMedia.includes(o));
-  // Only headline denials dispute the event: "officials denied reports of a tsunami" inside a quake story
-  // denies a side claim, not the earthquake.
-  const disputingOrigins = counted.filter((o) => o.articleIds.some((id) => claims.get(id)?.headlineDenial));
+  const disputes = disputingArticles(event, articles, claims);
+  const disputingOrigins = counted.filter((o) => o.articleIds.some((id) => disputes.has(id)));
   const retracting = counted.some((o) => o.articleIds.some((id) => claims.get(id)?.headlineRetraction));
-  const confirmingOrigins = counted.filter((o) => o.articleIds.some((id) => !claims.get(id)?.headlineDenial));
+  const confirmingOrigins = counted.filter((o) => o.articleIds.some((id) => !disputes.has(id)));
 
   const verification = statusOf({
     confirming: confirmingOrigins.length,
@@ -115,7 +115,7 @@ export function verifyEvent(
     .filter((a): a is Article => a !== undefined)
     .sort((a, b) => a.publishedAt.localeCompare(b.publishedAt))[0];
 
-  const numbers = summarizeNumbers(event.origins, articles, claims, sources);
+  const numbers = summarizeNumbers(event.origins, articles, claims, sources, disputes);
   return {
     ...event,
     verification,
@@ -124,6 +124,31 @@ export function verifyEvent(
     chatterOnly: numbers.chatterOnly,
     statements: summarizeStatements(counted, claims),
   };
+}
+
+/** Words that say *what kind* of thing is denied, not *what*: "reports of", "claims that". */
+const DENIED_FILLER = new Set(["report", "claim", "rumor", "rumour", "story", "allegation", "news", "social", "media", "video", "post", "suggestion"]);
+
+/**
+ * Articles that dispute the event itself. Only headline denials count ("officials denied reports of a tsunami"
+ * inside a quake story denies a side claim, not the earthquake), and not:
+ * - denials of responsibility ("RSF denies involvement", "rejects accusations"): they dispute who did it;
+ * - denials of something no other article reports ("operator denies reports of leak after quake"): a side rumour.
+ */
+function disputingArticles(event: NewsEvent, articles: Map<string, Article>, claims: Map<string, ArticleClaims>): Set<string> {
+  const denials = event.articleIds.filter((id) => claims.get(id)?.headlineDenial && !claims.get(id)?.responsibilityDenial);
+  if (denials.length === 0) return new Set();
+  const reported = new Set<string>();
+  for (const id of event.articleIds) {
+    if (claims.get(id)?.headlineDenial) continue;
+    const article = articles.get(id);
+    for (const term of tokenize(`${article?.title ?? ""} ${article?.summary ?? ""}`)) reported.add(term);
+  }
+  return new Set(denials.filter((id) => {
+    const denied = tokenize(claims.get(id)?.deniedText ?? "").filter((t) => !DENIED_FILLER.has(t));
+    // Nothing specific to compare ("…is fake"), or nothing else to compare with: it disputes the event.
+    return denied.length === 0 || reported.size === 0 || denied.some((t) => reported.has(t));
+  }));
 }
 
 function statusOf(c: Omit<Verification, "status" | "reason"> & { retracting: boolean }): Verification {
@@ -163,6 +188,7 @@ function summarizeNumbers(
   articles: Map<string, Article>,
   claims: Map<string, ArticleClaims>,
   sources: Map<string, NewsSource>,
+  disputes: Set<string>,
 ): { summaries: NumberSummary[]; chatterOnly: ChatterOnly[] } {
   const byKind = new Map<CountKind, NumberReport[]>();
   const chatter = new Map<CountKind, Map<number, number>>();
@@ -181,7 +207,7 @@ function summarizeNumbers(
     for (const articleId of origin.articleIds) {
       const article = articles.get(articleId);
       const articleClaims = claims.get(articleId);
-      if (!article || !articleClaims || articleClaims.headlineDenial) continue;
+      if (!article || !articleClaims || disputes.has(articleId)) continue;
       const sourceId = article.sourceIds[0] ?? "";
       const fromPrimary = sources.get(sourceId)?.tier === "primary";
       for (const n of articleClaims.numbers) {

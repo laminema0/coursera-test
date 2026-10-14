@@ -98,3 +98,10 @@ test("state media on its own country is the government's voice, not independent 
   const quake = analyze(articles, sourceMap).find((e) => e.title.includes("Malatya"))!;
   assert.equal(quake.verification.stateMediaOwnCountry, 0);
 });
+
+test("a denial of a side claim inside the story doesn't dispute the event", () => {
+  const sideDenial = { ...articles.find((a) => a.sourceIds[0] === "dw")!, id: "side", summary: "Officials denied reports of a tsunami after the Malatya earthquake killed 15 people." };
+  const quake = analyze([...articles.filter((a) => a.sourceIds[0] !== "dw"), sideDenial], sourceMap).find((e) => e.articleIds.includes("side"))!;
+  assert.equal(quake.verification.status, "confirmed");
+  assert.equal(quake.verification.disputing, 0);
+});

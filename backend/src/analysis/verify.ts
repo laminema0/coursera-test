@@ -84,9 +84,11 @@ export function verifyEvent(
   const eventText = event.articleIds.map((id) => `${articles.get(id)?.title ?? ""} ${articles.get(id)?.summary ?? ""}`).join(" ");
   const ownCountryStateMedia = event.origins.filter((o) => isOwnCountryStateMedia(o, eventText, sources));
   const counted = event.origins.filter((o) => o.kind !== "signal" && !ownCountryStateMedia.includes(o));
-  const disputingOrigins = counted.filter((o) => o.articleIds.some((id) => claims.get(id)?.denial));
-  const retracting = counted.some((o) => o.articleIds.some((id) => claims.get(id)?.retraction));
-  const confirmingOrigins = counted.filter((o) => o.articleIds.some((id) => !claims.get(id)?.denial));
+  // Only headline denials dispute the event: "officials denied reports of a tsunami" inside a quake story
+  // denies a side claim, not the earthquake.
+  const disputingOrigins = counted.filter((o) => o.articleIds.some((id) => claims.get(id)?.headlineDenial));
+  const retracting = counted.some((o) => o.articleIds.some((id) => claims.get(id)?.headlineRetraction));
+  const confirmingOrigins = counted.filter((o) => o.articleIds.some((id) => !claims.get(id)?.headlineDenial));
 
   const verification = statusOf({
     confirming: confirmingOrigins.length,
@@ -156,7 +158,7 @@ function summarizeNumbers(
     for (const articleId of origin.articleIds) {
       const article = articles.get(articleId);
       const articleClaims = claims.get(articleId);
-      if (!article || !articleClaims || articleClaims.denial) continue;
+      if (!article || !articleClaims || articleClaims.headlineDenial) continue;
       const sourceId = article.sourceIds[0] ?? "";
       const fromPrimary = sources.get(sourceId)?.tier === "primary";
       for (const n of articleClaims.numbers) {
@@ -213,7 +215,7 @@ function summarizeStatements(origins: EventOrigin[], claims: Map<string, Article
       const articleClaims = claims.get(articleId);
       for (const s of articleClaims?.statements ?? []) {
         // In "ministry denies minister said X", the "said" is what is being denied, not a new assertion.
-        if (articleClaims?.denial && s.stance === "asserts") continue;
+        if (articleClaims?.headlineDenial && s.stance === "asserts") continue;
         const summary = bySpeaker.get(s.speakerKey) ?? { speakerKey: s.speakerKey, speaker: s.speaker, asserts: 0, denies: 0, confirms: 0, seen: new Set() };
         // Count each origin once per speaker and stance.
         const key = `${origin.key}:${s.stance}`;

@@ -25,10 +25,14 @@ export interface StatementClaim {
 export interface ArticleClaims {
   numbers: NumberClaim[];
   statements: StatementClaim[];
-  /** The article reports that something was denied, called false, or debunked. */
+  /** The article reports that something was denied, called false, or debunked (anywhere in the text). */
   denial: boolean;
+  /** The denial is the headline: the article is *about* the denial. Only these dispute an event. */
+  headlineDenial: boolean;
   /** The article reports a correction or retraction. */
   retraction: boolean;
+  /** The correction or retraction is the headline. */
+  headlineRetraction: boolean;
 }
 
 const WORD_NUMBERS: Record<string, number> = {
@@ -117,7 +121,14 @@ export function extractClaims(title: string, summary?: string): ArticleClaims {
   }
 
   const text = sentences.join(" ");
-  return { numbers, statements: dedupeStatements(statements), denial: DENIAL.test(text), retraction: RETRACTION.test(text) };
+  return {
+    numbers,
+    statements: dedupeStatements(statements),
+    denial: DENIAL.test(text),
+    headlineDenial: DENIAL.test(title),
+    retraction: RETRACTION.test(text),
+    headlineRetraction: RETRACTION.test(title),
+  };
 }
 
 const ATTRIBUTION_RANK: Record<AttributionType, number> = { unattributed: 0, media: 1, witness: 2, official: 3 };

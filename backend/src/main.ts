@@ -3,6 +3,7 @@ import { dirname, join } from "node:path";
 import { analyze } from "./analysis/verify.ts";
 import { DailyBudget } from "./budget.ts";
 import { type EventsResponse, toApiEvents } from "./events-api.ts";
+import { CoverageTracker } from "./sources/gdelt.ts";
 import { loadConfig } from "./config.ts";
 import { Ingestor } from "./ingest.ts";
 import { createApiServer } from "./server.ts";
@@ -23,14 +24,30 @@ const articles = articlesFile && existsSync(articlesFile)
 const collector = new Collector({ sources: sourceList.sources, language: sourceList.language, store: articles });
 const sourceMap = new Map(sourceList.sources.map((s) => [s.id, s]));
 let latestEvents: EventsResponse | undefined;
+const coverage = new CoverageTracker();
+const GDELT_ENABLED = process.env.GDELT !== "off";
 
-function analyzeNow(): void {
+async function analyzeNow(): Promise<void> {
   const started = Date.now();
   const all = [...articles.articles.values()];
   const events = analyze(all, sourceMap);
-  latestEvents = toApiEvents(events, articles.articles, sourceMap, new Date());
+  const publish = () => {
+    latestEvents = toApiEvents(events, articles.articles, sourceMap, new Date(), (id) => coverage.get(id));
+  };
+  publish();
   const byStatus = events.reduce<Record<string, number>>((acc, e) => ({ ...acc, [e.verification.status]: (acc[e.verification.status] ?? 0) + 1 }), {});
   console.log(`[analysis] ${all.length} articles → ${events.length} events in ${Date.now() - started} ms ${JSON.stringify(byStatus)}`);
+
+  if (GDELT_ENABLED) {
+    // Coverage for the newest multi-source events; GDELT allows about one request every 5 seconds.
+    coverage.retain(new Set(events.map((e) => e.id)));
+    const top = events.filter((e) => e.verification.confirming >= 2 || e.verification.signals > 0).slice(0, 5);
+    const checked = await coverage.refresh(top, 5);
+    if (checked > 0) {
+      publish();
+      console.log(`[gdelt] coverage updated for ${checked} events`);
+    }
+  }
 }
 
 // Optional, paid: X ingestion runs only when a token is configured.
@@ -65,7 +82,7 @@ async function tick(): Promise<void> {
     console.log(`[sources] attempted=${report.attempted} new=${report.newArticles} notModified=${report.notModified} failed=${report.failed.length} expired=${report.expired}`);
     for (const f of report.failed) console.log(`[sources]   ${f.sourceId}: ${f.error}`);
     save(articlesFile, articles.snapshot());
-    analyzeNow();
+    await analyzeNow();
 
     if (ingestor && xStore) {
       console.log(`[x] ${JSON.stringify(await ingestor.runCycle())}`);

@@ -17,7 +17,16 @@ struct NewsEvent: Identifiable, Decodable, Hashable, Sendable {
     let verification: Verification
     let numbers: [NumberSummary]
     let statements: [StatementSummary]
+    /// Worldwide coverage (GDELT): how far the story has spread. Not confirmation.
+    let coverage: Coverage?
     let origins: [EventOrigin]
+}
+
+struct Coverage: Decodable, Hashable, Sendable {
+    let outlets: Int
+    let countries: Int
+    let firstSeenAt: Date?
+    let checkedAt: Date
 }
 
 enum VerificationStatus: String, Decodable, Hashable, Sendable, CaseIterable {

@@ -21,6 +21,7 @@ struct EventsTests {
             "source_id": "bbc-world", "at": "2026-10-14T09:40:00.000Z" }] },
           { "kind": "magnitude", "min": 6.1, "max": 6.1, "most_reported": { "value": 6.1, "origins": 4 }, "timeline": [] }],
         "statements": [],
+        "coverage": { "outlets": 87, "countries": 23, "first_seen_at": "2026-10-14T09:15:00.000Z", "checked_at": "2026-10-14T12:00:00.000Z" },
         "origins": [{ "key": "primary:usgs", "kind": "primary", "tier": "primary", "articles": [{
           "id": "a1", "title": "M 6.1 earthquake – 20 km S of Malatya, Turkey", "url": "https://earthquake.usgs.gov/x",
           "source_id": "usgs", "source_name": "USGS", "published_at": "2026-10-14T09:10:00.000Z" }] }]
@@ -41,6 +42,8 @@ struct EventsTests {
         #expect(quake.numbers.first?.isRange == true)
         #expect(quake.numbers.last?.kind == .magnitude)
         #expect(quake.origins.first?.kind == .primary)
+        #expect(quake.coverage?.outlets == 87)
+        #expect(response.events.last?.coverage == nil)
         #expect(response.events.last?.verification.status == .unverified, "unknown status falls back safely")
     }
 

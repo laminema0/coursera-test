@@ -46,7 +46,7 @@ struct MockEventsRepository: EventsRepository {
                     status: status, reason: reason, confirming: confirming, disputing: disputing,
                     primary: primary, tier1: tier1, signals: signals, stateMediaOwnCountry: 0
                 ),
-                numbers: numbers, statements: statements, origins: origins
+                numbers: numbers, statements: statements, coverage: nil, origins: origins
             )
         }
         let killed = NumberSummary(

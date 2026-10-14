@@ -1,4 +1,5 @@
 import type { VerifiedEvent } from "./analysis/verify.ts";
+import type { Coverage } from "./sources/gdelt.ts";
 import type { Article, NewsSource } from "./sources/types.ts";
 
 // JSON shape of GET /v1/events (snake_case for the iOS decoder).
@@ -33,6 +34,8 @@ export interface ApiEvent {
     timeline: { value: number; qualifier: string; attribution: string; official: boolean; source_id: string; at: string }[];
   }[];
   statements: { speaker: string; asserts: number; denies: number; confirms: number }[];
+  /** Worldwide coverage from GDELT (uncurated outlets): how far the story has spread, not confirmation. */
+  coverage?: { outlets: number; countries: number; first_seen_at?: string; checked_at: string };
   /** Independent origins with their articles, so users can check every source themselves. */
   origins: {
     key: string;
@@ -42,7 +45,13 @@ export interface ApiEvent {
   }[];
 }
 
-export function toApiEvents(events: VerifiedEvent[], articles: Map<string, Article>, sources: Map<string, NewsSource>, now: Date): EventsResponse {
+export function toApiEvents(
+  events: VerifiedEvent[],
+  articles: Map<string, Article>,
+  sources: Map<string, NewsSource>,
+  now: Date,
+  coverageOf: (eventId: string) => Coverage | undefined = () => undefined,
+): EventsResponse {
   return {
     generated_at: now.toISOString(),
     events: events.map((e) => ({
@@ -70,6 +79,10 @@ export function toApiEvents(events: VerifiedEvent[], articles: Map<string, Artic
         timeline: n.timeline.map((r) => ({ value: r.value, qualifier: r.qualifier, attribution: r.attribution, official: r.official, source_id: r.sourceId, at: r.at })),
       })),
       statements: e.statements.map((s) => ({ speaker: s.speaker, asserts: s.asserts, denies: s.denies, confirms: s.confirms })),
+      coverage: (() => {
+        const c = coverageOf(e.id);
+        return c && { outlets: c.outlets, countries: c.countries, first_seen_at: c.firstSeenAt, checked_at: c.checkedAt };
+      })(),
       origins: e.origins.map((o) => ({
         key: o.key,
         kind: o.kind,

@@ -1,6 +1,8 @@
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
+import { analyze } from "./analysis/verify.ts";
 import { DailyBudget } from "./budget.ts";
+import { type EventsResponse, toApiEvents } from "./events-api.ts";
 import { loadConfig } from "./config.ts";
 import { Ingestor } from "./ingest.ts";
 import { createApiServer } from "./server.ts";
@@ -19,6 +21,17 @@ const articles = articlesFile && existsSync(articlesFile)
   ? ArticleStore.restore(JSON.parse(readFileSync(articlesFile, "utf8")) as ArticleSnapshot)
   : new ArticleStore();
 const collector = new Collector({ sources: sourceList.sources, language: sourceList.language, store: articles });
+const sourceMap = new Map(sourceList.sources.map((s) => [s.id, s]));
+let latestEvents: EventsResponse | undefined;
+
+function analyzeNow(): void {
+  const started = Date.now();
+  const all = [...articles.articles.values()];
+  const events = analyze(all, sourceMap);
+  latestEvents = toApiEvents(events, articles.articles, sourceMap, new Date());
+  const byStatus = events.reduce<Record<string, number>>((acc, e) => ({ ...acc, [e.verification.status]: (acc[e.verification.status] ?? 0) + 1 }), {});
+  console.log(`[analysis] ${all.length} articles → ${events.length} events in ${Date.now() - started} ms ${JSON.stringify(byStatus)}`);
+}
 
 // Optional, paid: X ingestion runs only when a token is configured.
 let xStore: MemoryStore | undefined;
@@ -52,6 +65,7 @@ async function tick(): Promise<void> {
     console.log(`[sources] attempted=${report.attempted} new=${report.newArticles} notModified=${report.notModified} failed=${report.failed.length} expired=${report.expired}`);
     for (const f of report.failed) console.log(`[sources]   ${f.sourceId}: ${f.error}`);
     save(articlesFile, articles.snapshot());
+    analyzeNow();
 
     if (ingestor && xStore) {
       console.log(`[x] ${JSON.stringify(await ingestor.runCycle())}`);
@@ -64,8 +78,8 @@ async function tick(): Promise<void> {
   }
 }
 
-createApiServer({ articles, sources: sourceList.sources, xStore }).listen(config.port, () => {
-  console.log(`API on http://localhost:${config.port}  (/v1/articles, /v1/sources${xStore ? ", /v1/feed" : ""})`);
+createApiServer({ articles, sources: sourceList.sources, xStore, events: () => latestEvents }).listen(config.port, () => {
+  console.log(`API on http://localhost:${config.port}  (/v1/events, /v1/articles, /v1/sources${xStore ? ", /v1/feed" : ""})`);
   console.log(`${sourceList.sources.length} free sources loaded; X integration ${xStore ? "ON" : "off"}`);
 });
 void tick();

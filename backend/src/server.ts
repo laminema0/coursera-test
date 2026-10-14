@@ -1,4 +1,5 @@
 import { createServer, type Server } from "node:http";
+import type { EventsResponse } from "./events-api.ts";
 import { buildFeed } from "./feed.ts";
 import type { ArticleStore } from "./sources/article-store.ts";
 import type { NewsSource } from "./sources/types.ts";
@@ -7,6 +8,8 @@ import type { MemoryStore } from "./store.ts";
 export interface ApiDeps {
   articles: ArticleStore;
   sources: NewsSource[];
+  /** Latest analysis result, recomputed after each collection cycle. */
+  events?: () => EventsResponse | undefined;
   /** Present only when the optional (paid) X integration is enabled. */
   xStore?: MemoryStore;
   now?: () => Date;
@@ -52,6 +55,17 @@ export function createApiServer(deps: ApiDeps): Server {
             }),
           })),
         }, { "Cache-Control": "public, max-age=30" });
+
+      case "/v1/events": {
+        const result = deps.events?.();
+        if (!result) return send(503, { error: "not_ready" }, { "Retry-After": "30" });
+        const status = url.searchParams.get("status");
+        const events = result.events
+          .filter((e) => !status || e.verification.status === status)
+          .filter((e) => !since || e.last_updated_at > since.toISOString())
+          .slice(0, limit);
+        return send(200, { ...result, events }, { "Cache-Control": "public, max-age=30" });
+      }
 
       case "/v1/sources":
         return send(200, {

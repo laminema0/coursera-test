@@ -1,0 +1,206 @@
+import type { Article, NewsSource } from "../sources/types.ts";
+import { type ArticleClaims, type CountKind, extractClaims, type NumberClaim, type Qualifier } from "./claims.ts";
+import { clusterArticles, type ClusterOptions, defaultClusterOptions, type EventOrigin, type NewsEvent } from "./cluster.ts";
+
+export type VerificationStatus = "unverified" | "reported" | "corroborated" | "confirmed" | "disputed" | "retracted";
+
+export interface Verification {
+  status: VerificationStatus;
+  /** Independent origins (excluding social signals) reporting the event. */
+  confirming: number;
+  /** Independent origins reporting a denial, "false" or "debunked". */
+  disputing: number;
+  /** Official sources (USGS, UN, governments…) among the origins. */
+  primary: number;
+  /** Independent origins with strong editorial standards (tier 1). */
+  tier1: number;
+  /** Social posts only count as early signals. */
+  signals: number;
+  /** One-line, plain-language reason for the status. */
+  reason: string;
+}
+
+export interface NumberReport {
+  value: number;
+  qualifier: Qualifier;
+  attribution: NumberClaim["attribution"];
+  official: boolean;
+  originKey: string;
+  sourceId: string;
+  articleId: string;
+  at: string;
+}
+
+export interface NumberSummary {
+  kind: CountKind;
+  min: number;
+  max: number;
+  /** Value reported by the most independent origins (each origin's latest value). Ties go to the newer value. */
+  mostReported: { value: number; origins: number };
+  /** Newest value from an official source or attributed to officials. */
+  latestOfficial?: { value: number; at: string; sourceId: string };
+  /** Each origin's reports over time, oldest first. */
+  timeline: NumberReport[];
+}
+
+export interface StatementSummary {
+  speakerKey: string;
+  speaker: string;
+  asserts: number;
+  denies: number;
+  confirms: number;
+}
+
+export interface VerifiedEvent extends NewsEvent {
+  verification: Verification;
+  numbers: NumberSummary[];
+  statements: StatementSummary[];
+}
+
+/** Full analysis: group articles into events, extract claims, assign statuses and summarize numbers. */
+export function analyze(
+  articles: Article[],
+  sources: Map<string, NewsSource>,
+  options: ClusterOptions = defaultClusterOptions,
+): VerifiedEvent[] {
+  const claimsById = new Map(articles.map((a) => [a.id, extractClaims(a.title, a.summary)]));
+  const articleById = new Map(articles.map((a) => [a.id, a]));
+  return clusterArticles(articles, sources, options)
+    .map((event) => verifyEvent(event, articleById, claimsById, sources))
+    .sort((a, b) => b.lastUpdatedAt.localeCompare(a.lastUpdatedAt));
+}
+
+export function verifyEvent(
+  event: NewsEvent,
+  articles: Map<string, Article>,
+  claims: Map<string, ArticleClaims>,
+  sources: Map<string, NewsSource>,
+): VerifiedEvent {
+  const counted = event.origins.filter((o) => o.kind !== "signal");
+  const disputingOrigins = counted.filter((o) => o.articleIds.some((id) => claims.get(id)?.denial));
+  const retracting = counted.some((o) => o.articleIds.some((id) => claims.get(id)?.retraction));
+  const confirmingOrigins = counted.filter((o) => o.articleIds.some((id) => !claims.get(id)?.denial));
+
+  const verification = statusOf({
+    confirming: confirmingOrigins.length,
+    disputing: disputingOrigins.length,
+    primary: counted.filter((o) => o.kind === "primary").length,
+    tier1: confirmingOrigins.filter((o) => o.tier === 1).length,
+    signals: event.origins.length - counted.length,
+    retracting,
+  });
+
+  return {
+    ...event,
+    verification,
+    numbers: summarizeNumbers(event.origins, articles, claims, sources),
+    statements: summarizeStatements(counted, claims),
+  };
+}
+
+function statusOf(c: Omit<Verification, "status" | "reason"> & { retracting: boolean }): Verification {
+  const base = { confirming: c.confirming, disputing: c.disputing, primary: c.primary, tier1: c.tier1, signals: c.signals };
+  const sources = (n: number) => `${n} independent source${n === 1 ? "" : "s"}`;
+
+  if (c.retracting) {
+    return { ...base, status: "retracted", reason: "A source reported a correction or retraction." };
+  }
+  if (c.disputing > 0) {
+    return { ...base, status: "disputed", reason: `${sources(c.confirming)} report it; ${c.disputing} report${c.disputing === 1 ? "s" : ""} a denial or call it false.` };
+  }
+  if (c.primary > 0) {
+    return { ...base, status: "confirmed", reason: `Confirmed by an official source${c.confirming > c.primary ? `, plus ${sources(c.confirming - c.primary)}` : ""}.` };
+  }
+  if (c.confirming >= 3 || (c.confirming >= 2 && c.tier1 >= 1)) {
+    return { ...base, status: "corroborated", reason: `${sources(c.confirming)} report it${c.tier1 ? `, ${c.tier1} with strong editorial standards` : ""}.` };
+  }
+  if (c.confirming >= 1) {
+    return { ...base, status: "reported", reason: c.confirming === 1 ? "Only one independent source so far (others may be copies)." : `${sources(c.confirming)}, none with strong editorial standards yet.` };
+  }
+  return { ...base, status: "unverified", reason: "Only social media posts so far. Not confirmed by any news or official source." };
+}
+
+function summarizeNumbers(
+  origins: EventOrigin[],
+  articles: Map<string, Article>,
+  claims: Map<string, ArticleClaims>,
+  sources: Map<string, NewsSource>,
+): NumberSummary[] {
+  const byKind = new Map<CountKind, NumberReport[]>();
+  for (const origin of origins) {
+    if (origin.kind === "signal") continue; // social posts never count toward numbers
+    for (const articleId of origin.articleIds) {
+      const article = articles.get(articleId);
+      const articleClaims = claims.get(articleId);
+      if (!article || !articleClaims || articleClaims.denial) continue;
+      const sourceId = article.sourceIds[0] ?? "";
+      const fromPrimary = sources.get(sourceId)?.tier === "primary";
+      for (const n of articleClaims.numbers) {
+        const list = byKind.get(n.kind) ?? [];
+        list.push({
+          value: n.value,
+          qualifier: n.qualifier,
+          attribution: fromPrimary ? "official" : n.attribution,
+          official: fromPrimary || n.attribution === "official",
+          originKey: origin.key,
+          sourceId,
+          articleId,
+          at: article.publishedAt,
+        });
+        byKind.set(n.kind, list);
+      }
+    }
+  }
+
+  return [...byKind.entries()].map(([kind, reports]) => {
+    reports.sort((a, b) => a.at.localeCompare(b.at));
+    // Each origin's latest number: early counts are replaced as that source updates.
+    const latestPerOrigin = new Map<string, NumberReport>();
+    for (const r of reports) latestPerOrigin.set(r.originKey, r);
+
+    const votes = new Map<number, { origins: number; newest: string }>();
+    for (const r of latestPerOrigin.values()) {
+      const vote = votes.get(r.value) ?? { origins: 0, newest: r.at };
+      vote.origins += 1;
+      if (r.at > vote.newest) vote.newest = r.at;
+      votes.set(r.value, vote);
+    }
+    const [mostValue, mostVote] = [...votes.entries()].sort((a, b) => b[1].origins - a[1].origins || b[1].newest.localeCompare(a[1].newest))[0]!;
+    const official = reports.filter((r) => r.official).at(-1);
+    const values = reports.map((r) => r.value);
+
+    return {
+      kind,
+      min: Math.min(...values),
+      max: Math.max(...values),
+      mostReported: { value: mostValue, origins: mostVote.origins },
+      latestOfficial: official && { value: official.value, at: official.at, sourceId: official.sourceId },
+      timeline: reports,
+    };
+  }).sort((a, b) => KIND_ORDER.indexOf(a.kind) - KIND_ORDER.indexOf(b.kind));
+}
+
+const KIND_ORDER: CountKind[] = ["killed", "injured", "missing", "arrested", "evacuated", "displaced", "magnitude"];
+
+function summarizeStatements(origins: EventOrigin[], claims: Map<string, ArticleClaims>): StatementSummary[] {
+  const bySpeaker = new Map<string, StatementSummary & { seen: Set<string> }>();
+  for (const origin of origins) {
+    for (const articleId of origin.articleIds) {
+      for (const s of claims.get(articleId)?.statements ?? []) {
+        const summary = bySpeaker.get(s.speakerKey) ?? { speakerKey: s.speakerKey, speaker: s.speaker, asserts: 0, denies: 0, confirms: 0, seen: new Set() };
+        // Count each origin once per speaker and stance.
+        const key = `${origin.key}:${s.stance}`;
+        if (!summary.seen.has(key)) {
+          summary.seen.add(key);
+          if (s.stance === "asserts") summary.asserts += 1;
+          else if (s.stance === "denies") summary.denies += 1;
+          else summary.confirms += 1;
+        }
+        bySpeaker.set(s.speakerKey, summary);
+      }
+    }
+  }
+  return [...bySpeaker.values()]
+    .map(({ seen: _seen, ...rest }) => rest)
+    .sort((a, b) => b.asserts + b.denies + b.confirms - (a.asserts + a.denies + a.confirms));
+}

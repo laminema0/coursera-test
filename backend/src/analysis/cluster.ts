@@ -64,6 +64,9 @@ export function clusterArticles(
   const events: Working[] = [];
   const index = new Map<string, Set<number>>();
   const windowMs = options.windowHours * 3_600_000;
+  // Only distinctive words find candidates: a word in most articles ("police") would make every event a candidate.
+  const maxDf = Math.max(20, Math.floor(sorted.length * 0.02));
+  const distinctive = (term: string) => tfidf.documentFrequency(term) <= maxDf;
 
   sorted.forEach((article, i) => {
     const vector = tfidf.vector(termCounts[i]!);
@@ -71,7 +74,10 @@ export function clusterArticles(
     const at = Date.parse(article.publishedAt);
 
     const candidates = new Set<number>();
-    for (const term of vector.keys()) for (const e of index.get(term) ?? []) candidates.add(e);
+    for (const term of vector.keys()) {
+      if (!distinctive(term)) continue;
+      for (const e of index.get(term) ?? []) if (at - events[e]!.lastAt <= windowMs) candidates.add(e);
+    }
 
     let best = -1;
     let bestScore = 0;
@@ -93,57 +99,68 @@ export function clusterArticles(
       event.vectors.push(vector);
       addInto(event.centroid, vector);
       event.lastAt = Math.max(event.lastAt, at);
-      for (const term of vector.keys()) addToIndex(index, term, best);
+      for (const term of vector.keys()) if (distinctive(term)) addToIndex(index, term, best);
     } else {
       const e = events.push({ articles: [article], vectors: [vector], centroid: new Map(vector), firstAt: at, lastAt: at }) - 1;
-      for (const term of vector.keys()) addToIndex(index, term, e);
+      for (const term of vector.keys()) if (distinctive(term)) addToIndex(index, term, e);
     }
   });
 
-  return mergeSimilar(events, options).map((event) => finalize(event, sources, options));
+  return mergeSimilar(events, options, distinctive).map((event) => finalize(event, sources, options));
 }
 
 /**
  * Single-pass grouping depends on arrival order: early, differently-worded reports can start separate events.
- * Merging events whose combined profiles are similar fixes most of that (agglomerative, closest pair first).
+ * A second pass merges events whose combined profiles are similar. Candidates come from an index of each
+ * event's most distinctive words, so this stays fast with tens of thousands of articles.
  */
-function mergeSimilar(events: Working[], options: ClusterOptions): Working[] {
-  const alive = [...events];
+function mergeSimilar(events: Working[], options: ClusterOptions, distinctive: (term: string) => boolean): Working[] {
   const windowMs = options.windowHours * 3_600_000;
-  for (;;) {
-    let best: [number, number] | undefined;
-    let bestScore = options.mergeThreshold;
-    for (let i = 0; i < alive.length; i += 1) {
-      for (let j = i + 1; j < alive.length; j += 1) {
-        const a = alive[i]!;
-        const b = alive[j]!;
-        if (a.firstAt - b.lastAt > windowMs || b.firstAt - a.lastAt > windowMs) continue;
-        if (sharedTerms(a.centroid, b.centroid) < 2) continue;
-        const score = similarity(a.centroid, b.centroid);
-        if (score >= bestScore) {
-          best = [i, j];
-          bestScore = score;
-        }
+  let alive = [...events].sort((a, b) => a.firstAt - b.firstAt);
+
+  for (let round = 0; round < 3; round += 1) {
+    const index = new Map<string, Set<number>>();
+    alive.forEach((event, i) => {
+      for (const term of topTerms(event.centroid, 10)) if (distinctive(term)) addToIndex(index, term, i);
+    });
+
+    const dead = new Set<number>();
+    let merges = 0;
+    alive.forEach((event, i) => {
+      if (dead.has(i)) return;
+      const candidates = new Set<number>();
+      for (const term of topTerms(event.centroid, 10)) {
+        for (const j of index.get(term) ?? []) if (j > i && !dead.has(j)) candidates.add(j);
       }
-    }
-    if (!best) return alive;
-    const [i, j] = best;
-    const a = alive[i]!;
-    const b = alive[j]!;
-    const order = a.articles.map((article, k) => [article, a.vectors[k]!] as const)
-      .concat(b.articles.map((article, k) => [article, b.vectors[k]!] as const))
-      .sort((x, y) => x[0].publishedAt.localeCompare(y[0].publishedAt) || x[0].id.localeCompare(y[0].id));
-    const merged: Working = {
-      articles: order.map(([article]) => article),
-      vectors: order.map(([, vector]) => vector),
-      centroid: new Map(a.centroid),
-      firstAt: Math.min(a.firstAt, b.firstAt),
-      lastAt: Math.max(a.lastAt, b.lastAt),
-    };
-    addInto(merged.centroid, b.centroid);
-    alive.splice(j, 1);
-    alive[i] = merged;
+      for (const j of [...candidates].sort((a, b) => a - b)) {
+        const other = alive[j]!;
+        if (other.firstAt - event.lastAt > windowMs || event.firstAt - other.lastAt > windowMs) continue;
+        if (sharedTerms(event.centroid, other.centroid) < 2) continue;
+        if (similarity(event.centroid, other.centroid) < options.mergeThreshold) continue;
+        absorb(event, other);
+        dead.add(j);
+        merges += 1;
+      }
+    });
+    alive = alive.filter((_, i) => !dead.has(i));
+    if (merges === 0) break;
   }
+  return alive;
+}
+
+function absorb(target: Working, other: Working): void {
+  const order = target.articles.map((article, k) => [article, target.vectors[k]!] as const)
+    .concat(other.articles.map((article, k) => [article, other.vectors[k]!] as const))
+    .sort((x, y) => x[0].publishedAt.localeCompare(y[0].publishedAt) || x[0].id.localeCompare(y[0].id));
+  target.articles = order.map(([article]) => article);
+  target.vectors = order.map(([, vector]) => vector);
+  addInto(target.centroid, other.centroid);
+  target.firstAt = Math.min(target.firstAt, other.firstAt);
+  target.lastAt = Math.max(target.lastAt, other.lastAt);
+}
+
+function topTerms(v: SparseVector, n: number): string[] {
+  return [...v.entries()].sort((a, b) => b[1] - a[1]).slice(0, n).map(([t]) => t);
 }
 
 function addToIndex(index: Map<string, Set<number>>, term: string, event: number): void {

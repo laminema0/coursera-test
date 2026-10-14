@@ -102,6 +102,14 @@ export class TfIdf {
     for (const term of new Set(terms)) this.#df.set(term, (this.#df.get(term) ?? 0) + 1);
   }
 
+  get documentCount(): number {
+    return this.#docs;
+  }
+
+  documentFrequency(term: string): number {
+    return this.#df.get(term) ?? 0;
+  }
+
   idf(term: string): number {
     return Math.log((this.#docs + 1) / ((this.#df.get(term) ?? 0) + 1)) + 1;
   }

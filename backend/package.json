@@ -12,7 +12,8 @@
     "test": "node --test 'test/**/*.test.ts'",
     "typecheck": "tsc --noEmit",
     "check-sources": "node scripts/check-sources.ts",
-    "analyze": "node scripts/analyze.ts"
+    "analyze": "node scripts/analyze.ts",
+    "eval": "tsc --noEmit -p eval && node eval/run.ts"
   },
   "devDependencies": {
     "@types/node": "^22.15.0",

@@ -110,6 +110,30 @@ export function clusterArticles(
 }
 
 /**
+ * Builds events from a known grouping (lists of article ids) instead of clustering.
+ * Used by the quality benchmark to score statuses and numbers independently of grouping mistakes.
+ */
+export function eventsFromGroups(
+  articles: Article[],
+  groups: string[][],
+  sources: Map<string, NewsSource>,
+  options: ClusterOptions = defaultClusterOptions,
+): NewsEvent[] {
+  const termCounts = new Map(articles.map((a) => [a.id, weightedTerms(a.title, a.summary)]));
+  const tfidf = new TfIdf();
+  for (const counts of termCounts.values()) tfidf.addDocument(counts.keys());
+  const byId = new Map(articles.map((a) => [a.id, a]));
+  return groups.map((ids) => {
+    const members = ids.map((id) => byId.get(id)!).sort((a, b) => a.publishedAt.localeCompare(b.publishedAt) || a.id.localeCompare(b.id));
+    const vectors = members.map((a) => tfidf.vector(termCounts.get(a.id)!));
+    const centroid: SparseVector = new Map();
+    for (const v of vectors) addInto(centroid, v);
+    const times = members.map((a) => Date.parse(a.publishedAt));
+    return finalize({ articles: members, vectors, centroid, firstAt: Math.min(...times), lastAt: Math.max(...times) }, sources, options);
+  });
+}
+
+/**
  * Single-pass grouping depends on arrival order: early, differently-worded reports can start separate events.
  * A second pass merges events whose combined profiles are similar. Candidates come from an index of each
  * event's most distinctive words, so this stays fast with tens of thousands of articles.

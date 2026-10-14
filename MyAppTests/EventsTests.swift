@@ -29,7 +29,8 @@ struct EventsTests {
           "source_id": "usgs", "source_name": "USGS", "published_at": "2026-10-14T09:10:00.000Z" }] }]
       }, {
         "id": "e2", "title": "Something new", "first_seen_at": "2026-10-14T09:10:00Z", "last_updated_at": "2026-10-14T09:10:00Z",
-        "key_terms": [], "importance": 1, "breaking": false, "new_origins_last_hour": 0, "verification": { "status": "some-future-status", "reason": "", "confirming": 0, "disputing": 0,
+        "key_terms": [], "importance": 1, "breaking": false, "new_origins_last_hour": 0,
+        "verification": { "status": "some-future-status", "reason": "", "confirming": 0, "disputing": 0,
           "primary": 0, "tier1": 0, "signals": 1, "state_media_own_country": 0 }, "numbers": [], "statements": [], "origins": []
       }]
     }

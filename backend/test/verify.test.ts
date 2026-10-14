@@ -82,3 +82,18 @@ test("a retraction overrides everything", () => {
   ];
   assert.equal(analyze(items, sourceMap)[0]?.verification.status, "retracted");
 });
+
+test("state media on its own country is the government's voice, not independent confirmation", () => {
+  const items = [
+    article("q1", "aljazeera", "Qatar says it brokered ceasefire between Atlantis and Lemuria", "Qatar's foreign ministry said talks in Doha produced a ceasefire."),
+    article("q2", "fox", "Ceasefire between Atlantis and Lemuria announced after Doha talks", undefined, "2026-10-15T10:20:00Z"),
+  ];
+  const event = analyze(items, sourceMap)[0]!;
+  assert.equal(event.verification.stateMediaOwnCountry, 1);
+  assert.equal(event.verification.confirming, 1);
+  assert.equal(event.verification.status, "reported");
+
+  // The same outlet on another country's news counts normally.
+  const quake = analyze(articles, sourceMap).find((e) => e.title.includes("Malatya"))!;
+  assert.equal(quake.verification.stateMediaOwnCountry, 0);
+});

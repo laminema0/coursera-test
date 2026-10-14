@@ -1,5 +1,6 @@
 import type { Article, NewsSource } from "../sources/types.ts";
 import { type ArticleClaims, type CountKind, extractClaims, type NumberClaim, type Qualifier } from "./claims.ts";
+import { mentionsCountry } from "./countries.ts";
 import { clusterArticles, type ClusterOptions, defaultClusterOptions, type EventOrigin, type NewsEvent } from "./cluster.ts";
 
 export type VerificationStatus = "unverified" | "reported" | "corroborated" | "confirmed" | "disputed" | "retracted";
@@ -16,6 +17,8 @@ export interface Verification {
   tier1: number;
   /** Social posts only count as early signals. */
   signals: number;
+  /** State-funded outlets reporting on their own country: the government's voice, not independent confirmation. */
+  stateMediaOwnCountry: number;
   /** One-line, plain-language reason for the status. */
   reason: string;
 }
@@ -76,7 +79,9 @@ export function verifyEvent(
   claims: Map<string, ArticleClaims>,
   sources: Map<string, NewsSource>,
 ): VerifiedEvent {
-  const counted = event.origins.filter((o) => o.kind !== "signal");
+  const eventText = event.articleIds.map((id) => `${articles.get(id)?.title ?? ""} ${articles.get(id)?.summary ?? ""}`).join(" ");
+  const ownCountryStateMedia = event.origins.filter((o) => isOwnCountryStateMedia(o, eventText, sources));
+  const counted = event.origins.filter((o) => o.kind !== "signal" && !ownCountryStateMedia.includes(o));
   const disputingOrigins = counted.filter((o) => o.articleIds.some((id) => claims.get(id)?.denial));
   const retracting = counted.some((o) => o.articleIds.some((id) => claims.get(id)?.retraction));
   const confirmingOrigins = counted.filter((o) => o.articleIds.some((id) => !claims.get(id)?.denial));
@@ -86,7 +91,8 @@ export function verifyEvent(
     disputing: disputingOrigins.length,
     primary: counted.filter((o) => o.kind === "primary").length,
     tier1: confirmingOrigins.filter((o) => o.tier === 1).length,
-    signals: event.origins.length - counted.length,
+    signals: event.origins.filter((o) => o.kind === "signal").length,
+    stateMediaOwnCountry: ownCountryStateMedia.length,
     retracting,
   });
 
@@ -99,7 +105,7 @@ export function verifyEvent(
 }
 
 function statusOf(c: Omit<Verification, "status" | "reason"> & { retracting: boolean }): Verification {
-  const base = { confirming: c.confirming, disputing: c.disputing, primary: c.primary, tier1: c.tier1, signals: c.signals };
+  const base = { confirming: c.confirming, disputing: c.disputing, primary: c.primary, tier1: c.tier1, signals: c.signals, stateMediaOwnCountry: c.stateMediaOwnCountry };
   const sources = (n: number) => `${n} independent source${n === 1 ? "" : "s"}`;
 
   if (c.retracting) {
@@ -117,7 +123,17 @@ function statusOf(c: Omit<Verification, "status" | "reason"> & { retracting: boo
   if (c.confirming >= 1) {
     return { ...base, status: "reported", reason: c.confirming === 1 ? "Only one independent source so far (others may be copies)." : `${sources(c.confirming)}, none with strong editorial standards yet.` };
   }
+  if (c.stateMediaOwnCountry > 0) {
+    return { ...base, status: "unverified", reason: "Only state media of the country involved so far. Not independently confirmed." };
+  }
   return { ...base, status: "unverified", reason: "Only social media posts so far. Not confirmed by any news or official source." };
+}
+
+/** All of the origin's sources are state-funded and from a country the event is about. */
+function isOwnCountryStateMedia(origin: EventOrigin, eventText: string, sources: Map<string, NewsSource>): boolean {
+  if (origin.kind !== "outlet") return false;
+  const originSources = origin.sourceIds.map((id) => sources.get(id)).filter((s): s is NewsSource => s !== undefined);
+  return originSources.length > 0 && originSources.every((s) => s.stateFunded && mentionsCountry(eventText, s.country));
 }
 
 function summarizeNumbers(

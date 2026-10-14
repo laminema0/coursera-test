@@ -10,7 +10,7 @@ const src = (id: string, tier: NewsSource["tier"], owner: string, extra: Partial
 export const sources: NewsSource[] = [
   src("bbc-world", 1, "bbc"), src("bbc-top", 1, "bbc"), src("guardian", 1, "guardian"), src("npr", 1, "npr"),
   src("dw", 1, "dw"), src("cbc", 1, "cbc"), src("sky", 2, "sky"), src("independent", 2, "independent"),
-  src("aljazeera", 2, "aljazeera", { stateFunded: true }), src("fox", 2, "fox"), src("cbs", 2, "paramount"),
+  src("aljazeera", 2, "aljazeera", { stateFunded: true, country: "QA" }), src("fox", 2, "fox"), src("cbs", 2, "paramount"),
   src("usgs", "primary", "usgs", { format: "usgs-geojson" }), src("ukgov", "primary", "ukgov"),
   src("reddit", "signal", "reddit"),
 ];

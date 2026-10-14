@@ -39,6 +39,8 @@ struct Verification: Decodable, Hashable, Sendable {
     let primary: Int
     let tier1: Int
     let signals: Int
+    /// State-funded outlets reporting on their own country. Shown, but not counted as independent confirmation.
+    let stateMediaOwnCountry: Int
 }
 
 enum CountKind: String, Decodable, Hashable, Sendable {

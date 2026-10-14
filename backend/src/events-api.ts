@@ -22,6 +22,7 @@ export interface ApiEvent {
     primary: number;
     tier1: number;
     signals: number;
+    state_media_own_country: number;
   };
   numbers: {
     kind: string;
@@ -50,7 +51,16 @@ export function toApiEvents(events: VerifiedEvent[], articles: Map<string, Artic
       first_seen_at: e.firstSeenAt,
       last_updated_at: e.lastUpdatedAt,
       key_terms: e.keyTerms,
-      verification: { ...e.verification },
+      verification: {
+        status: e.verification.status,
+        reason: e.verification.reason,
+        confirming: e.verification.confirming,
+        disputing: e.verification.disputing,
+        primary: e.verification.primary,
+        tier1: e.verification.tier1,
+        signals: e.verification.signals,
+        state_media_own_country: e.verification.stateMediaOwnCountry,
+      },
       numbers: e.numbers.map((n) => ({
         kind: n.kind,
         min: n.min,

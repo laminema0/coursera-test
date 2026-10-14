@@ -14,7 +14,7 @@ struct EventsTests {
         "first_seen_at": "2026-10-14T09:10:00.000Z", "last_updated_at": "2026-10-14T11:10:00.000Z",
         "key_terms": ["earthquake", "turkey", "malatya"],
         "verification": { "status": "confirmed", "reason": "Confirmed by an official source, plus 5 independent sources.",
-          "confirming": 6, "disputing": 0, "primary": 1, "tier1": 3, "signals": 1 },
+          "confirming": 6, "disputing": 0, "primary": 1, "tier1": 3, "signals": 1, "state_media_own_country": 0 },
         "numbers": [{ "kind": "killed", "min": 5, "max": 15, "most_reported": { "value": 14, "origins": 2 },
           "latest_official": { "value": 15, "at": "2026-10-14T11:10:00.000Z", "source_id": "dw" },
           "timeline": [{ "value": 5, "qualifier": "atLeast", "attribution": "official", "official": true,
@@ -27,7 +27,7 @@ struct EventsTests {
       }, {
         "id": "e2", "title": "Something new", "first_seen_at": "2026-10-14T09:10:00Z", "last_updated_at": "2026-10-14T09:10:00Z",
         "key_terms": [], "verification": { "status": "some-future-status", "reason": "", "confirming": 0, "disputing": 0,
-          "primary": 0, "tier1": 0, "signals": 1 }, "numbers": [], "statements": [], "origins": []
+          "primary": 0, "tier1": 0, "signals": 1, "state_media_own_country": 0 }, "numbers": [], "statements": [], "origins": []
       }]
     }
     """

@@ -1,0 +1,5 @@
+// Shared settings. Note: "//" starts a comment in xcconfig, so URLs use "/$()/".
+APP_DISPLAY_NAME = MyApp
+APP_BUNDLE_ID_BASE = com.example.myapp
+MARKETING_VERSION = 0.1.0
+CURRENT_PROJECT_VERSION = 1

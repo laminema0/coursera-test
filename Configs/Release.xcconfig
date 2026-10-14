@@ -1,0 +1,6 @@
+#include "Base.xcconfig"
+
+APP_ENVIRONMENT = release
+APP_BUNDLE_ID = $(APP_BUNDLE_ID_BASE)
+API_BASE_URL = https:/$()/api.example.com/v1
+USE_MOCK_DATA = NO

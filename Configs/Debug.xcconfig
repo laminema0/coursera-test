@@ -1,0 +1,7 @@
+#include "Base.xcconfig"
+
+APP_ENVIRONMENT = debug
+APP_BUNDLE_ID = $(APP_BUNDLE_ID_BASE).debug
+APP_DISPLAY_NAME = MyApp Dev
+API_BASE_URL = https:/$()/api-dev.example.com/v1
+USE_MOCK_DATA = YES

@@ -1,0 +1,7 @@
+#include "Base.xcconfig"
+
+APP_ENVIRONMENT = staging
+APP_BUNDLE_ID = $(APP_BUNDLE_ID_BASE).staging
+APP_DISPLAY_NAME = MyApp Beta
+API_BASE_URL = https:/$()/api-staging.example.com/v1
+USE_MOCK_DATA = NO

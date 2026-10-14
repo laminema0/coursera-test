@@ -1,0 +1,44 @@
+name: iOS CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  packages:
+    name: Core package tests
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test Core
+        run: swift test --package-path Packages/Core
+
+  app:
+    name: Build & test app
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install tools
+        run: brew install xcodegen swiftlint xcbeautify
+      - name: Generate project
+        run: xcodegen generate
+      - name: Lint
+        run: swiftlint lint --strict
+      - name: Pick a simulator
+        id: sim
+        run: |
+          UDID=$(xcrun simctl list devices available -j | python3 -c 'import json,sys; d=json.load(sys.stdin)["devices"]; print(next(x["udid"] for k,v in d.items() if "iOS" in k for x in v if x["name"].startswith("iPhone")))')
+          echo "udid=$UDID" >> "$GITHUB_OUTPUT"
+      - name: Test
+        run: |
+          set -o pipefail
+          xcodebuild test \
+            -project MyApp.xcodeproj \
+            -scheme MyApp \
+            -destination "id=${{ steps.sim.outputs.udid }}" \
+            CODE_SIGNING_ALLOWED=NO | xcbeautify || exit 1

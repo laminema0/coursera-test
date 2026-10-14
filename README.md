@@ -1,2 +1,45 @@
-# coursera-test
-coursera test repository
+# MyApp (iOS)
+
+A SwiftUI starter for an iOS 17+ app: modular, testable, and configured per environment.
+See **[docs/PLAN.md](docs/PLAN.md)** for every phase from idea to App Store release.
+
+## Requirements
+- macOS with Xcode 16 or newer
+- [XcodeGen](https://github.com/yonaskolb/XcodeGen) and SwiftLint: `brew install xcodegen swiftlint`
+
+## Getting Started
+```bash
+xcodegen generate      # creates MyApp.xcodeproj from project.yml
+open MyApp.xcodeproj   # run the "MyApp" scheme on a simulator
+```
+The Debug build uses **mock data**, so it runs without a backend.
+
+## Environments
+| Configuration | Scheme | Bundle ID | Mock data |
+|---|---|---|---|
+| Debug | MyApp | `com.example.myapp.debug` | Yes |
+| Staging | MyApp-Staging | `com.example.myapp.staging` | No |
+| Release | MyApp (Archive) | `com.example.myapp` | No |
+
+Set API URLs and names in `Configs/*.xcconfig`. Don't put secrets there.
+
+## Architecture
+- **MVVM + Repository:** Views → `@Observable` view model → repository protocol → `APIClient` / storage.
+- **DI:** `AppContainer` is built at launch and injected with `.environment(...)`.
+- **Navigation:** one `Router` (`NavigationPath`) per tab; destinations live in `AppRoute`.
+- **Packages:** `Packages/Core` (Networking, Persistence, Logging), `Packages/DesignSystem` (tokens and components).
+
+## Adding a Feature
+1. Create `MyApp/Features/<Name>/` with model, `<Name>Repository` (protocol + live + mock), view model, and views.
+2. Register the repository in `AppContainer`.
+3. Add routes to `AppRoute` and `withAppRoutes()`.
+4. Add view model tests in `MyAppTests/`.
+
+## Tests
+```bash
+swift test --package-path Packages/Core
+xcodebuild test -project MyApp.xcodeproj -scheme MyApp -destination 'platform=iOS Simulator,name=iPhone 16'
+```
+
+## Renaming the App
+Replace `MyApp` in `project.yml` and in the folder names, and update `APP_BUNDLE_ID_BASE` / `APP_DISPLAY_NAME` in `Configs/Base.xcconfig`.

@@ -1,4 +1,5 @@
 import { createServer, type Server } from "node:http";
+import type { TrackRecord } from "./analysis/track-record.ts";
 import type { EventsResponse } from "./events-api.ts";
 import { buildFeed } from "./feed.ts";
 import type { ArticleStore } from "./sources/article-store.ts";
@@ -10,6 +11,8 @@ export interface ApiDeps {
   sources: NewsSource[];
   /** Latest analysis result, recomputed after each collection cycle. */
   events?: () => EventsResponse | undefined;
+  /** Learned accuracy of each source on settled events. */
+  trackRecord?: TrackRecord;
   /** Present only when the optional (paid) X integration is enabled. */
   xStore?: MemoryStore;
   now?: () => Date;
@@ -75,7 +78,21 @@ export function createApiServer(deps: ApiDeps): Server {
         return send(200, {
           sources: deps.sources.map((s) => {
             const state = deps.articles.sourceState.get(s.id);
-            return { id: s.id, name: s.name, tier: String(s.tier), owner: s.owner, country: s.country, state_funded: s.stateFunded ?? false, healthy: (state?.consecutiveFailures ?? 0) === 0, last_success_at: state?.lastSuccessAt };
+            const r = deps.trackRecord?.sources.get(s.id);
+            return {
+              id: s.id, name: s.name, tier: String(s.tier), owner: s.owner, country: s.country,
+              state_funded: s.stateFunded ?? false,
+              healthy: (state?.consecutiveFailures ?? 0) === 0,
+              last_success_at: state?.lastSuccessAt,
+              track_record: r && {
+                events_settled: r.eventsSettled,
+                numbers_checked: r.numbersChecked,
+                numbers_close: r.numbersClose,
+                numbers_high: r.numbersHigh,
+                numbers_low: r.numbersLow,
+                disputed_or_retracted: r.disputedOrRetracted,
+              },
+            };
           }),
         });
 

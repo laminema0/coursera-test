@@ -25,8 +25,8 @@ test("GET /v1/events serves verified events with filters", async () => {
     const disputed = await (await fetch(`${base}/v1/events?status=disputed`)).json() as typeof events;
     assert.deepEqual(disputed.events.map((e) => e.verification.status), ["disputed"]);
 
-    const notReady = createApiServer({ articles: store, sources, events: () => undefined });
-    assert.ok(notReady);
+    const sourcesResponse = await (await fetch(`${base}/v1/sources`)).json() as { sources: { id: string; healthy: boolean }[] };
+    assert.equal(sourcesResponse.sources.length, sources.length);
   } finally {
     server.close();
   }

@@ -35,6 +35,8 @@ struct MockEventsRepository: EventsRepository {
                 sourceId: source, sourceName: source, publishedAt: .now.addingTimeInterval(-minutesAgo * 60)
             )
         }
+        // Sample-data builder: many defaulted parameters keep each sample readable.
+        // swiftlint:disable:next function_parameter_count
         func event(
             _ id: String, _ title: String, _ status: VerificationStatus, reason: String,
             confirming: Int, disputing: Int = 0, primary: Int = 0, tier1: Int = 0, signals: Int = 0,

@@ -1,5 +1,6 @@
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
+import { TrackRecord, type TrackRecordSnapshot } from "./analysis/track-record.ts";
 import { analyze } from "./analysis/verify.ts";
 import { DailyBudget } from "./budget.ts";
 import { type EventsResponse, toApiEvents } from "./events-api.ts";
@@ -24,6 +25,10 @@ const articles = articlesFile && existsSync(articlesFile)
 const collector = new Collector({ sources: sourceList.sources, language: sourceList.language, store: articles });
 const sourceMap = new Map(sourceList.sources.map((s) => [s.id, s]));
 let latestEvents: EventsResponse | undefined;
+const trackRecordFile = dataDir ? join(dataDir, "track-record.json") : undefined;
+const trackRecord = trackRecordFile && existsSync(trackRecordFile)
+  ? TrackRecord.restore(JSON.parse(readFileSync(trackRecordFile, "utf8")) as TrackRecordSnapshot)
+  : new TrackRecord();
 const coverage = new CoverageTracker();
 const GDELT_ENABLED = process.env.GDELT !== "off";
 
@@ -35,6 +40,7 @@ async function analyzeNow(): Promise<void> {
     latestEvents = toApiEvents(events, articles.articles, sourceMap, new Date(), (id) => coverage.get(id));
   };
   publish();
+  if (trackRecord.update(events, new Date()) > 0) save(trackRecordFile, trackRecord.snapshot());
   const byStatus = events.reduce<Record<string, number>>((acc, e) => ({ ...acc, [e.verification.status]: (acc[e.verification.status] ?? 0) + 1 }), {});
   console.log(`[analysis] ${all.length} articles → ${events.length} events in ${Date.now() - started} ms ${JSON.stringify(byStatus)}`);
 
@@ -95,7 +101,7 @@ async function tick(): Promise<void> {
   }
 }
 
-createApiServer({ articles, sources: sourceList.sources, xStore, events: () => latestEvents }).listen(config.port, () => {
+createApiServer({ articles, sources: sourceList.sources, xStore, events: () => latestEvents, trackRecord }).listen(config.port, () => {
   console.log(`API on http://localhost:${config.port}  (/v1/events, /v1/articles, /v1/sources${xStore ? ", /v1/feed" : ""})`);
   console.log(`${sourceList.sources.length} free sources loaded; X integration ${xStore ? "ON" : "off"}`);
 });

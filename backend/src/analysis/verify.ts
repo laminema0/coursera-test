@@ -112,7 +112,7 @@ function statusOf(c: Omit<Verification, "status" | "reason"> & { retracting: boo
     return { ...base, status: "retracted", reason: "A source reported a correction or retraction." };
   }
   if (c.disputing > 0) {
-    return { ...base, status: "disputed", reason: `${sources(c.confirming)} report it; ${c.disputing} report${c.disputing === 1 ? "s" : ""} a denial or call it false.` };
+    return { ...base, status: "disputed", reason: `${sources(c.confirming)} report it; ${c.disputing} ${c.disputing === 1 ? "reports a denial or calls" : "report a denial or call"} it false.` };
   }
   if (c.primary > 0) {
     return { ...base, status: "confirmed", reason: `Confirmed by an official source${c.confirming > c.primary ? `, plus ${sources(c.confirming - c.primary)}` : ""}.` };
@@ -202,7 +202,10 @@ function summarizeStatements(origins: EventOrigin[], claims: Map<string, Article
   const bySpeaker = new Map<string, StatementSummary & { seen: Set<string> }>();
   for (const origin of origins) {
     for (const articleId of origin.articleIds) {
-      for (const s of claims.get(articleId)?.statements ?? []) {
+      const articleClaims = claims.get(articleId);
+      for (const s of articleClaims?.statements ?? []) {
+        // In "ministry denies minister said X", the "said" is what is being denied, not a new assertion.
+        if (articleClaims?.denial && s.stance === "asserts") continue;
         const summary = bySpeaker.get(s.speakerKey) ?? { speakerKey: s.speakerKey, speaker: s.speaker, asserts: 0, denies: 0, confirms: 0, seen: new Set() };
         // Count each origin once per speaker and stance.
         const key = `${origin.key}:${s.stance}`;

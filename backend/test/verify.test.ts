@@ -45,7 +45,7 @@ test("minister statement denied by the ministry is disputed", () => {
   assert.equal(minister.verification.confirming, 2);
   assert.equal(minister.verification.disputing, 1);
   const weber = minister.statements.find((s) => s.speakerKey === "weber");
-  assert.ok(weber && weber.asserts >= 2, JSON.stringify(minister.statements));
+  assert.equal(weber?.asserts, 2, "the denial article doesn't count as a third assertion");
   assert.ok(minister.statements.some((s) => s.speakerKey === "finance ministry" && s.denies === 1));
 });
 

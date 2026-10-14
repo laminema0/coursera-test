@@ -11,7 +11,8 @@
     "start": "node --env-file-if-exists=.env src/main.ts",
     "test": "node --test 'test/**/*.test.ts'",
     "typecheck": "tsc --noEmit",
-    "check-sources": "node scripts/check-sources.ts"
+    "check-sources": "node scripts/check-sources.ts",
+    "analyze": "node scripts/analyze.ts"
   },
   "devDependencies": {
     "@types/node": "^22.15.0",

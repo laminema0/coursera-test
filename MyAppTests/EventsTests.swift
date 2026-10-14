@@ -63,7 +63,7 @@ struct EventsTests {
         let store = EventsStore(repository: MockEventsRepository(delay: .zero))
         await store.refresh()
         #expect(store.events.count == MockEventsRepository.sample.count)
-        #expect(store.eventsByStatus.map { $0.status } == [.confirmed, .corroborated, .reported, .unverified, .disputed])
+        #expect(store.eventsByStatus.map { $0.status } == [.confirmed, .corroborated, .reported, .unverified, .disputed, .retracted])
     }
 
     @Test func statusFilterIsSentToRepository() async {

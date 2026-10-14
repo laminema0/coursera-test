@@ -29,6 +29,13 @@ Set API URLs and names in `Configs/*.xcconfig`. Don't put secrets there.
 - **Navigation:** one `Router` (`NavigationPath`) per tab; destinations live in `AppRoute`.
 - **Packages:** `Packages/Core` (Networking, Persistence, Logging), `Packages/DesignSystem` (tokens and components).
 
+## Screens
+- **News** (first tab): stories grouped by status (⚪ unverified, 🟡 reported, 🟢 corroborated, 🔵 confirmed, 🔴 disputed, ⚫ retracted),
+  filter chips, "Breaking" marker, status trail; pull to refresh and auto refresh every minute.
+- **Event detail**: status and reason, counts, numbers (most reported, range, latest official, timeline; social chatter apart in purple),
+  who said what, status history, sources by origin. Articles open in Safari inside the app.
+- **Sources**: tier, owner, health and track record. Status colors live in `Packages/DesignSystem` (`TrustStatus`, `VerificationBadge`).
+
 ## Adding a Feature
 1. Create `MyApp/Features/<Name>/` with model, `<Name>Repository` (protocol + live + mock), view model, and views.
 2. Register the repository in `AppContainer`.

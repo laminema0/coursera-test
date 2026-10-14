@@ -1,7 +1,7 @@
 // Checks every source in a source list: reachable? parses? how fresh?
 // Usage: npm run check-sources [-- sources/en.json]
 import { readFileSync } from "node:fs";
-import { parseFeed, parseUsgsGeoJson } from "../src/sources/parse.ts";
+import { parseSource } from "../src/sources/parse.ts";
 import type { NewsSource, SourceList } from "../src/sources/types.ts";
 
 const file = process.argv[2] ?? "sources/en.json";
@@ -15,7 +15,7 @@ async function check(source: NewsSource): Promise<string> {
     });
     if (!response.ok) return `❌ ${source.id.padEnd(22)} HTTP ${response.status}`;
     const body = await response.text();
-    const entries = source.format === "usgs-geojson" ? parseUsgsGeoJson(body) : parseFeed(body);
+    const entries = parseSource(source, body);
     if (entries.length === 0) return `⚠️  ${source.id.padEnd(22)} reachable, but no entries parsed`;
     const newest = entries.map((e) => e.publishedAt).filter(Boolean).sort().at(-1);
     const age = newest ? `${Math.round((Date.now() - Date.parse(newest)) / 60_000)} min old` : "no dates";

@@ -230,6 +230,8 @@ function finalize(event: Working, sources: Map<string, NewsSource>, options: Clu
   });
 
   const times = articles.map((a) => a.publishedAt).sort();
+  // Wire agencies (Reuters, AP, AFP…) have strong editorial standards, whoever republishes their story.
+  for (const origin of origins.values()) if (origin.kind === "wire") origin.tier = 1;
   const originList = [...origins.values()];
   return {
     id: articles[0]!.id,

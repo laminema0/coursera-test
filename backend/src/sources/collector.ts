@@ -1,6 +1,6 @@
 import { canonicalizeUrl, storyIdFor } from "../news/url.ts";
 import type { ArticleStore } from "./article-store.ts";
-import { parseFeed, parseUsgsGeoJson } from "./parse.ts";
+import { parseSource } from "./parse.ts";
 import type { FeedEntry, NewsSource } from "./types.ts";
 
 export interface CollectorReport {
@@ -85,7 +85,7 @@ export class Collector {
       } else {
         const body = await response.text();
         if (body.length > MAX_BODY_BYTES) throw new Error("Feed too large");
-        const entries = source.format === "usgs-geojson" ? parseUsgsGeoJson(body) : parseFeed(body);
+        const entries = parseSource(source, body);
         if (entries.length === 0) throw new Error("No entries found (format changed or not a feed)");
         report.newArticles += this.#storeEntries(source, entries, now);
         state.etag = response.headers.get("etag") ?? undefined;

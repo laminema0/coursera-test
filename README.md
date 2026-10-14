@@ -36,7 +36,7 @@ Set API URLs and names in `Configs/*.xcconfig`. Don't put secrets there.
 4. Add view model tests in `MyAppTests/`.
 
 ## Backend (news collection)
-`backend/` collects news from 55 free English sources (RSS/Atom feeds and official feeds) and serves it to the app.
+`backend/` collects news from 58 free English sources (RSS/Atom feeds, official feeds, and wire agencies' Bluesky accounts) and serves it to the app.
 The X API integration is optional (paid) and switches on only with `X_BEARER_TOKEN`.
 See [docs/VERIFICATION-STRATEGY.md](docs/VERIFICATION-STRATEGY.md).
 ```bash

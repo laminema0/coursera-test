@@ -3,6 +3,36 @@
   "notes": "Free sources only. tier 1 = strong editorial/corrections standards; tier 2 = other national/regional outlets; primary = official origin of claims; signal = early chatter, never confirms. 'owner' groups sources that are NOT independent of each other. Run `npm run check-sources` to verify every URL from your machine.",
   "sources": [
     {
+      "id": "ap-bluesky",
+      "name": "Associated Press (Bluesky)",
+      "url": "https://public.api.bsky.app/xrpc/app.bsky.feed.getAuthorFeed?filter=posts_no_replies&limit=50&actor=apnews.com",
+      "format": "bluesky",
+      "tier": 1,
+      "owner": "ap",
+      "country": "US",
+      "pollMinutes": 5
+    },
+    {
+      "id": "reuters-bluesky",
+      "name": "Reuters (Bluesky)",
+      "url": "https://public.api.bsky.app/xrpc/app.bsky.feed.getAuthorFeed?filter=posts_no_replies&limit=50&actor=reuters.com",
+      "format": "bluesky",
+      "tier": 1,
+      "owner": "reuters",
+      "country": "GB",
+      "pollMinutes": 5
+    },
+    {
+      "id": "afp-bluesky",
+      "name": "AFP (Bluesky)",
+      "url": "https://public.api.bsky.app/xrpc/app.bsky.feed.getAuthorFeed?filter=posts_no_replies&limit=50&actor=afp.com",
+      "format": "bluesky",
+      "tier": 1,
+      "owner": "afp",
+      "country": "FR",
+      "pollMinutes": 5
+    },
+    {
       "id": "bbc-world",
       "name": "BBC News – World",
       "url": "https://feeds.bbci.co.uk/news/world/rss.xml",

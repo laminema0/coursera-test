@@ -170,3 +170,21 @@ test("skips feed items that are already older than the retention window", async 
   assert.equal(report.newArticles, 1);
   assert.equal([...store.articles.values()][0]?.title, "No date");
 });
+
+test("parses a Bluesky author feed: link cards become articles, reposts are skipped", async () => {
+  const { parseBlueskyFeed } = await import("../src/sources/parse.ts");
+  const body = JSON.stringify({
+    feed: [
+      { post: { uri: "at://did:plc:ap/app.bsky.feed.post/3k1", author: { handle: "apnews.com" },
+        record: { text: "BREAKING: A strong earthquake has struck eastern Turkey.", createdAt: "2026-10-14T09:20:00.000Z" },
+        embed: { external: { uri: "https://apnews.com/article/turkey-earthquake-123?utm_source=bsky", title: "Strong earthquake hits eastern Turkey", description: "A magnitude 6.1 earthquake struck Malatya province, officials said." } } } },
+      { post: { uri: "at://did:plc:ap/app.bsky.feed.post/3k2", author: { handle: "apnews.com" },
+        record: { text: "Officials say at least 12 people were killed. More to come.", createdAt: "2026-10-14T09:50:00.000Z" } } },
+      { reason: { $type: "app.bsky.feed.defs#reasonRepost" }, post: { uri: "at://x/app.bsky.feed.post/9", author: { handle: "someone.bsky.social" }, record: { text: "Reposted", createdAt: "2026-10-14T09:00:00.000Z" } } },
+    ],
+  });
+  assert.deepEqual(parseBlueskyFeed(body), [
+    { url: "https://apnews.com/article/turkey-earthquake-123?utm_source=bsky", title: "Strong earthquake hits eastern Turkey", summary: "A magnitude 6.1 earthquake struck Malatya province, officials said.", publishedAt: "2026-10-14T09:20:00.000Z" },
+    { url: "https://bsky.app/profile/apnews.com/post/3k2", title: "Officials say at least 12 people were killed.", summary: "More to come.", publishedAt: "2026-10-14T09:50:00.000Z" },
+  ]);
+});

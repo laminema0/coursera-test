@@ -11,6 +11,8 @@ const WIRE_CREDITS: { id: string; pattern: RegExp }[] = [
   { id: "pti", pattern: /\(PTI\)|\bPTI\b\s*[—–-]/ },
 ];
 
+const WIRE_IDS = new Set(WIRE_CREDITS.map((w) => w.id));
+
 export type OriginKind = "primary" | "wire" | "outlet" | "signal";
 
 export interface ArticleOrigin {
@@ -29,6 +31,8 @@ export interface ArticleOrigin {
 export function originOf(article: Article, source: NewsSource): ArticleOrigin {
   if (source.tier === "primary") return { key: `primary:${source.owner}`, kind: "primary" };
   if (source.tier === "signal") return { key: `signal:${source.owner}`, kind: "signal" };
+  // A wire agency's own account (e.g. AP on Bluesky) and "(AP)" credits elsewhere are the same origin.
+  if (WIRE_IDS.has(source.owner)) return { key: `wire:${source.owner}`, kind: "wire" };
   const text = `${article.title} ${article.summary ?? ""}`;
   const wire = WIRE_CREDITS.find((w) => w.pattern.test(text));
   if (wire) return { key: `wire:${wire.id}`, kind: "wire" };

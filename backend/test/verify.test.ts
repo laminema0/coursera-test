@@ -65,14 +65,15 @@ test("status ladder: social only → one source → corroborated", () => {
   const oneSource = [...social, article("o1", "fox", "Explosion reported at Riverside port in Atlantis city", undefined, "2026-10-15T10:10:00Z")];
   assert.equal(analyze(oneSource, sourceMap)[0]?.verification.status, "reported");
 
-  const copies = [...oneSource, article("o2", "cbs", "Explosion at Atlantis Riverside port, Reuters reports", undefined, "2026-10-15T10:12:00Z"),
-    article("o3", "sky", "Explosion at Atlantis Riverside port, Reuters reports", undefined, "2026-10-15T10:13:00Z")];
-  const twoTier2 = analyze(copies, sourceMap)[0]!;
-  assert.equal(twoTier2.verification.confirming, 2, "two Reuters copies count once");
-  assert.equal(twoTier2.verification.status, "reported", "two tier-2 origins are not enough");
+  const twoTier2 = [...oneSource, article("o2", "independent", "Explosion at Atlantis Riverside port injures workers", undefined, "2026-10-15T10:12:00Z")];
+  assert.equal(analyze(twoTier2, sourceMap)[0]?.verification.status, "reported", "two tier-2 origins are not enough");
 
-  const withTier1 = [...copies, article("o4", "guardian", "Explosion rocks Riverside port in Atlantis city", undefined, "2026-10-15T10:30:00Z")];
-  assert.equal(analyze(withTier1, sourceMap)[0]?.verification.status, "corroborated");
+  const copies = [...oneSource, article("o3", "cbs", "Explosion at Atlantis Riverside port, Reuters reports", undefined, "2026-10-15T10:12:00Z"),
+    article("o4", "sky", "Explosion at Atlantis Riverside port, Reuters reports", undefined, "2026-10-15T10:13:00Z")];
+  const withWire = analyze(copies, sourceMap)[0]!;
+  assert.equal(withWire.verification.confirming, 2, "two Reuters copies count once");
+  assert.equal(withWire.verification.tier1, 1, "the wire's standards count, not the republisher's");
+  assert.equal(withWire.verification.status, "corroborated");
 });
 
 test("a retraction overrides everything", () => {

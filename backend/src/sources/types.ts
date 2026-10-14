@@ -6,7 +6,8 @@ export interface NewsSource {
   id: string;
   name: string;
   url: string;
-  format: "rss" | "usgs-geojson";
+  /** "bluesky": `url` is the public getAuthorFeed URL for the account (no login needed). */
+  format: "rss" | "usgs-geojson" | "bluesky";
   tier: SourceTier;
   /** Sources with the same owner are not independent of each other. */
   owner: string;

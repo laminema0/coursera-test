@@ -78,3 +78,12 @@ test("different stories about the same place stay separate", () => {
   assert.equal(eventOf("vote-0"), eventOf("vote-1"), "both election reports together");
   assert.notEqual(eventOf("vote-0"), quake, "election ≠ earthquake");
 });
+
+test("a wire's own account and credits to that wire elsewhere are one origin", async () => {
+  const { originOf } = await import("../src/analysis/origin.ts");
+  const apSource = { id: "ap-bluesky", name: "AP", url: "", format: "bluesky" as const, tier: 1 as const, owner: "ap", country: "US", pollMinutes: 5 };
+  const own = originOf({ ...articles[0]!, title: "Strong earthquake hits eastern Turkey", summary: undefined }, apSource);
+  const credited = originOf({ ...articles[0]!, title: "Earthquake hits Turkey (AP)", summary: undefined }, sourceMap.get("cbs")!);
+  assert.deepEqual(own, { key: "wire:ap", kind: "wire" });
+  assert.deepEqual(credited, own);
+});

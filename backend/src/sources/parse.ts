@@ -1,6 +1,6 @@
 import { XMLParser } from "fast-xml-parser";
 import { decodeEntities } from "../news/opengraph.ts";
-import type { FeedEntry } from "./types.ts";
+import type { FeedEntry, NewsSource } from "./types.ts";
 
 const SUMMARY_MAX = 300;
 
@@ -100,4 +100,48 @@ function date(value: string): string | undefined {
 
 function valid(entry: FeedEntry): boolean {
   return entry.url.startsWith("http") && entry.title.length > 0;
+}
+
+/** Picks the parser for a source's format. */
+export function parseSource(source: Pick<NewsSource, "format">, body: string): FeedEntry[] {
+  switch (source.format) {
+    case "usgs-geojson": return parseUsgsGeoJson(body);
+    case "bluesky": return parseBlueskyFeed(body);
+    default: return parseFeed(body);
+  }
+}
+
+interface BlueskyFeedItem {
+  post?: {
+    uri?: string;
+    author?: { handle?: string };
+    record?: { text?: string; createdAt?: string };
+    embed?: { external?: { uri?: string; title?: string; description?: string } };
+  };
+  /** Present for reposts; we only want the account's own posts. */
+  reason?: unknown;
+}
+
+/**
+ * Bluesky app.bsky.feed.getAuthorFeed response. News accounts post a link card for each story:
+ * the card's URL, title and description become the article; posts without a link card use the post itself.
+ */
+export function parseBlueskyFeed(body: string): FeedEntry[] {
+  const doc = JSON.parse(body) as { feed?: BlueskyFeedItem[] };
+  return (doc.feed ?? []).flatMap((item) => {
+    const post = item.post;
+    if (item.reason || !post?.uri || !post.record) return [];
+    const external = post.embed?.external;
+    const text = plain(post.record.text ?? "");
+    const rkey = post.uri.split("/").at(-1);
+    const postUrl = post.author?.handle && rkey ? `https://bsky.app/profile/${post.author.handle}/post/${rkey}` : "";
+    const title = plain(external?.title ?? "") || text.split(/(?<=[.!?])\s|\n/)[0] || "";
+    const entry: FeedEntry = {
+      url: external?.uri ?? postUrl,
+      title,
+      summary: summarize(external?.description || (external ? text : text.slice(title.length))),
+      publishedAt: date(post.record.createdAt ?? ""),
+    };
+    return valid(entry) ? [entry] : [];
+  });
 }

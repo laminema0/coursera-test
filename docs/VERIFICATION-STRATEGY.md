@@ -45,12 +45,15 @@ Paid APIs (X, news APIs, AI APIs) are a **later milestone**, if subscriptions ev
 ### 1. Paying for news data
 🟥 **1. News APIs and X cost money** (X ≈ $0.005 per post; commercial news APIs start around hundreds of dollars a month).
 🟩 Use **free publisher RSS feeds**. Almost every serious outlet publishes them for exactly this use.
-**55 English sources** across 20+ countries are in `backend/sources/en.json`.
+**58 English sources** across 20+ countries are in `backend/sources/en.json`.
 
 &nbsp;&nbsp;🟥 **1a. The biggest wire agencies (Reuters, AP, AFP) have no free feeds.**
-&nbsp;&nbsp;🟩 Their reports still reach us through outlets that republish them with a credit ("— Reuters", "(AP)").
-We detect the credit and count the story **once, as the wire**, not once per outlet. This is also the main defense against fake "confirmation" (Card 3).
-Next step: GDELT (free, worldwide, updates every 15 minutes) shows how far an event has spread.
+&nbsp;&nbsp;🟩 Two free routes, both built:
+- **Their own Bluesky accounts** (AP, Reuters, AFP): every story is posted with a link card, and Bluesky's public API is free with no login.
+- **Credits in other outlets** ("— Reuters", "(AP)"): detected and counted **once, as the wire**, not once per outlet. This is also the main defense against fake "confirmation" (Card 3).
+
+A wire's own post and credits to it elsewhere are the same origin. Wire reporting counts as tier 1, whoever republishes it.
+GDELT (free) adds how far an event has spread worldwide.
 
 &nbsp;&nbsp;🟥 **1b. Feeds break and change URLs without notice.**
 &nbsp;&nbsp;🟩 `npm run check-sources` tests every feed. Each source tracks its health, failures back off exponentially (capped at 6 hours), and `/v1/sources` shows which sources are down.

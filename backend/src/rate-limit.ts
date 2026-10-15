@@ -28,17 +28,23 @@ export class RateLimiter {
 }
 
 /**
- * Client address. Behind Cloudflare Tunnel all requests come from the tunnel process, so the CF-Connecting-IP header
- * (or X-Forwarded-For) is trusted only from there; a direct client can't spoof it.
+ * Client address for rate limiting. Behind Cloudflare Tunnel all requests come from the tunnel process, so the
+ * CF-Connecting-IP header is trusted only from there; a direct client can't spoof it.
  * `trust`: "loopback" (cloudflared on the same host, default), "private" (cloudflared in another container on a
  * private network, e.g. docker compose) or "none".
+ * X-Forwarded-For is only used when `forwardedFor` is on: any local process could set it, so it's off by default.
  */
-export function clientOf(request: IncomingMessage, trust: "loopback" | "private" | "none" = "loopback"): string {
+export function clientOf(
+  request: IncomingMessage,
+  trust: "loopback" | "private" | "none" = "loopback",
+  forwardedFor = false,
+): string {
   const remote = request.socket.remoteAddress ?? "unknown";
   const trusted = trust === "loopback" ? isLoopback(remote) : trust === "private" ? isPrivate(remote) : false;
   if (!trusted) return remote;
   const cf = request.headers["cf-connecting-ip"];
   if (typeof cf === "string" && cf) return cf.trim();
+  if (!forwardedFor) return remote;
   const xff = request.headers["x-forwarded-for"];
   const first = typeof xff === "string" ? xff.split(",")[0]?.trim() : undefined;
   return first || remote;

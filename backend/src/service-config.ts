@@ -23,6 +23,8 @@ export interface ServiceConfig {
   /** Allowed browser origins. Empty = CORS off (the iOS app doesn't need it). "*" allows any. */
   corsOrigins: string[];
   trustProxy: TrustProxy;
+  /** Also trust X-Forwarded-For from a trusted proxy (off: only Cloudflare's CF-Connecting-IP is used). */
+  trustForwardedFor: boolean;
   /** When set, /metrics also accepts `Authorization: Bearer <token>` from outside. */
   metricsToken?: string;
   rateLimitPerMinute: number;
@@ -44,6 +46,7 @@ export function loadServiceConfig(env: NodeJS.ProcessEnv = process.env): Service
     gdelt: env.GDELT !== "off",
     corsOrigins: (env.CORS_ORIGINS ?? "").split(",").map((o) => o.trim()).filter(Boolean),
     trustProxy: trust === "private" || trust === "none" ? trust : "loopback",
+    trustForwardedFor: env.TRUST_FORWARDED_FOR === "true",
     metricsToken: env.METRICS_TOKEN || undefined,
     rateLimitPerMinute: positive(env.RATE_LIMIT_PER_MINUTE, 120),
   };

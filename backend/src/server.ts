@@ -28,6 +28,7 @@ export interface ApiDeps {
   /** Allowed browser origins; empty or unset = no CORS headers at all. */
   corsOrigins?: string[];
   trustProxy?: TrustProxy;
+  trustForwardedFor?: boolean;
   /** Lets /metrics be scraped from outside the private network with `Authorization: Bearer <token>`. */
   metricsToken?: string;
 }
@@ -59,7 +60,7 @@ export function createApiServer(deps: ApiDeps): Server {
     const startedAt = process.hrtime.bigint();
     const url = new URL(request.url ?? "/", "http://localhost");
     const route = ROUTES.has(url.pathname) ? url.pathname : "other";
-    const client = clientOf(request, trust);
+    const client = clientOf(request, trust, deps.trustForwardedFor ?? false);
 
     response.on("finish", () => {
       const seconds = Number(process.hrtime.bigint() - startedAt) / 1e9;

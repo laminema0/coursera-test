@@ -34,8 +34,8 @@ services:
 
   cloudflared:
     profiles: ["tunnel"]
-    # Pin a specific release in production (see https://hub.docker.com/r/cloudflare/cloudflared/tags).
-    image: cloudflare/cloudflared:latest
+    # Pinned release (multi-arch, works on Oracle's Arm VMs). Update deliberately: https://hub.docker.com/r/cloudflare/cloudflared/tags
+    image: cloudflare/cloudflared:2026.9.3
     restart: unless-stopped
     command: tunnel --no-autoupdate run
     environment:

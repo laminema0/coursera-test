@@ -115,6 +115,7 @@ export class NewsService {
       log: this.#log.child({ component: "http" }),
       corsOrigins: options.service.corsOrigins,
       trustProxy: options.service.trustProxy,
+      trustForwardedFor: options.service.trustForwardedFor,
       metricsToken: options.service.metricsToken,
       rateLimiter: new RateLimiter(options.service.rateLimitPerMinute),
     });

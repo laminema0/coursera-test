@@ -115,6 +115,7 @@ over 1 KB are gzip-compressed when the client sends `Accept-Encoding: gzip` (URL
 | `RATE_LIMIT_PER_MINUTE` | 120 | Per-client API limit. |
 | `CORS_ORIGINS` | (off) | Comma-separated origins, or `*`. Only needed for browser clients. |
 | `TRUST_PROXY` | loopback | Trust `CF-Connecting-IP` from `loopback`, `private` networks, or `none`. |
+| `TRUST_FORWARDED_FOR` | false | Also trust `X-Forwarded-For` from that proxy. Keep `false` behind Cloudflare: any local process could set it. |
 | `METRICS_TOKEN` | – | Allows scraping `/metrics` through the tunnel. |
 | `X_BEARER_TOKEN`, `DAILY_BUDGET_USD` | – | Optional paid X integration (off by default). |
 

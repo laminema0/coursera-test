@@ -62,7 +62,9 @@ test("client address trusts proxy headers only from the configured network", () 
   assert.equal(clientOf(request("172.18.0.3", cf), "private"), "203.0.113.9");
   assert.equal(clientOf(request("198.51.100.1", cf), "private"), "198.51.100.1");
   assert.equal(clientOf(request("127.0.0.1", cf), "none"), "127.0.0.1");
-  assert.equal(clientOf(request("::1", { "x-forwarded-for": "203.0.113.7, 10.0.0.1" })), "203.0.113.7");
+  // X-Forwarded-For is ignored unless explicitly enabled: any local process could set it.
+  assert.equal(clientOf(request("::1", { "x-forwarded-for": "203.0.113.7, 10.0.0.1" })), "::1");
+  assert.equal(clientOf(request("::1", { "x-forwarded-for": "203.0.113.7, 10.0.0.1" }), "loopback", true), "203.0.113.7");
   assert.ok(isPrivate("::ffff:192.168.1.4") && isPrivate("fd12:3456::1") && !isPrivate("8.8.8.8") && !isPrivate("172.32.0.1"));
 });
 

@@ -52,7 +52,7 @@ final class AppContainer {
             feedRepository: feedRepository,
             eventsRepository: eventsRepository,
             sourcesRepository: sourcesRepository,
-            eventsCache: FileEventsCache.standard()
+            eventsCache: FileEventsCache.standard(sampleData: configuration.useMockData)
         )
     }
 

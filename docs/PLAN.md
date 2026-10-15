@@ -53,7 +53,7 @@ Phase 3 (Foundation) is already set up in this repository. Each phase ends with 
 - [x] Persistence (`KeyValueStore`: UserDefaults, in-memory, Keychain) + unit tests
 - [x] Logging (`os.Logger` categories)
 - [x] Design System (tokens + `PrimaryButtonStyle`, `LoadingView`, `ErrorStateView`)
-- [x] Sample features: Onboarding, Home (list → detail, loading/error states), Settings
+- [x] Features: Onboarding (explains the status colors), News (list → event detail), Sources, Settings
 - [x] Mock data mode, so the app runs with no backend
 - [x] Assets, String Catalog, Privacy Manifest
 - [x] SwiftLint config, `.gitignore`, CI workflow
@@ -61,7 +61,7 @@ Phase 3 (Foundation) is already set up in this repository. Each phase ends with 
 ## Phase 4 — Core Features (MVP)
 1. **Authentication:** Sign in with Apple, email/password, token storage in Keychain, token refresh.
 2. **Onboarding:** value screens, permission priming (notifications/location only when needed).
-3. **Main feature(s):** replace the `Home` sample with the real domain (models → repository → view model → views).
+3. **Main feature(s):** ✅ News list, event detail and sources (offline cache, background refresh, local alerts).
 4. **Profile & Settings:** account, preferences, logout, delete account (Apple requires this).
 5. **Search / filtering**, if relevant.
 
@@ -102,9 +102,9 @@ App
 ├── Onboarding (first launch only)
 │   └── Welcome → (Sign in) → Permissions
 └── MainTabView
-    ├── Home      → Item Detail
-    ├── (Feature tabs, added in Phase 4)
-    └── Settings  → About / Environment info / Reset
+    ├── News      → Event Detail (→ article in Safari)
+    ├── Sources
+    └── Settings  → Alerts / What the colors mean / Sources / About / Server info
 ```
 
 ## Repository Layout

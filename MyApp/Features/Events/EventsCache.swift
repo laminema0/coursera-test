@@ -11,9 +11,11 @@ protocol EventsCaching: Sendable {
 struct FileEventsCache: EventsCaching {
     let fileURL: URL
 
-    static func standard(fileManager: FileManager = .default) -> FileEventsCache {
+    /// Sample data gets its own file, so switching a build to a real server never shows sample stories.
+    static func standard(sampleData: Bool, fileManager: FileManager = .default) -> FileEventsCache {
         let directory = fileManager.urls(for: .cachesDirectory, in: .userDomainMask).first ?? fileManager.temporaryDirectory
-        return FileEventsCache(fileURL: directory.appendingPathComponent("events-v1.json"))
+        let name = sampleData ? "events-sample-v1.json" : "events-v1.json"
+        return FileEventsCache(fileURL: directory.appendingPathComponent(name))
     }
 
     func load() -> EventsResponse? {

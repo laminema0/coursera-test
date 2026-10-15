@@ -100,7 +100,8 @@ private struct FilterChip: View {
             .overlay(Capsule().strokeBorder(isSelected ? Color.dsTextPrimary : Color.dsSeparator, lineWidth: isSelected ? 1.5 : 1))
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(Text("\(title), \(count) stories"))
+        .accessibilityIdentifier("filter.\(status?.rawValue ?? "all")")
+        .accessibilityLabel(Text("\(title), ^[\(count) story](inflect: true)"))
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 }

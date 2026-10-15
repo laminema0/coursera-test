@@ -17,6 +17,19 @@ private struct FixedEventsRepository: EventsRepository {
     }
 }
 
+private final class CountingFailingRepository: EventsRepository, @unchecked Sendable {
+    // @unchecked: access to `count` is guarded by `lock`.
+    private let lock = NSLock()
+    private var count = 0
+
+    var calls: Int { lock.withLock { count } }
+
+    func fetchEvents(status: VerificationStatus?) async throws -> EventsResponse {
+        lock.withLock { count += 1 }
+        throw APIError.transport(.notConnectedToInternet)
+    }
+}
+
 @MainActor
 struct EventsCacheTests {
     private let sample = EventsResponse(generatedAt: Date(timeIntervalSince1970: 1_000), events: MockEventsRepository.sample)
@@ -70,6 +83,15 @@ struct EventsCacheTests {
         clock.advance(by: 30)
         await store.refreshIfStale(maxAge: 30)
         #expect(store.lastFetchedAt != first)
+    }
+
+    @Test func failedLaunchFetchIsNotRepeatedAtOnce() async {
+        let clock = TestClock()
+        let repository = CountingFailingRepository()
+        let store = EventsStore(repository: repository, cache: InMemoryEventsCache(sample), now: clock.read)
+        await store.loadIfNeeded()
+        await store.refreshIfStale(maxAge: 30)
+        #expect(repository.calls == 1, "offline launch: one request, not two")
     }
 }
 

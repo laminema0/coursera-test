@@ -37,6 +37,8 @@ final class EventsStore {
     /// Sent to the server. The list screen filters locally instead, so its counts stay complete.
     var statusFilter: VerificationStatus?
 
+    /// Last fetch attempt, successful or not, so a failing server isn't asked twice in a row.
+    private var lastAttemptAt: Date?
     private let repository: EventsRepository
     private let cache: EventsCaching?
     private let alertState: StoryAlertState?
@@ -99,15 +101,16 @@ final class EventsStore {
         await refresh()
     }
 
-    /// Refreshes when the last successful fetch is older than `maxAge` seconds (e.g. back from the background).
+    /// Refreshes when the last fetch attempt is older than `maxAge` seconds (e.g. back from the background).
     func refreshIfStale(maxAge: TimeInterval) async {
-        if let lastFetchedAt, now().timeIntervalSince(lastFetchedAt) < maxAge { return }
+        if let lastAttemptAt, now().timeIntervalSince(lastAttemptAt) < maxAge { return }
         await refresh()
     }
 
     func refresh() async {
         guard !isLoading else { return }
         isLoading = true
+        lastAttemptAt = now()
         defer { isLoading = false }
 
         do {

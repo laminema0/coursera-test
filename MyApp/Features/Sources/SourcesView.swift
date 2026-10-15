@@ -117,6 +117,7 @@ private struct SourceRow: View {
         }
         .padding(.vertical, 2)
         .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("source.row.\(source.id)")
     }
 }
 

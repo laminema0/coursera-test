@@ -1,7 +1,18 @@
-# MyApp (iOS)
+# MyApp: breaking news you can check (iOS)
 
-A SwiftUI starter for an iOS 17+ app: modular, testable, and configured per environment.
-See **[docs/PLAN.md](docs/PLAN.md)** for every phase from idea to App Store release.
+A free iPhone app for breaking news. Every story starts neutral and changes color as **independent** sources confirm it:
+⚪ Unverified → 🟡 Reported → 🟢 Corroborated → ✅ Confirmed, or 🔴 Disputed / ⚫ Retracted.
+Conflicting numbers (casualties, evacuations) show as a range, the most-reported value and the latest official figure,
+with social-media chatter shown separately.
+
+| Part | Where | Docs |
+|---|---|---|
+| iPhone app (SwiftUI, iOS 17+) | `MyApp/`, `Packages/` | [INSTALL-ON-IPHONE.md](docs/INSTALL-ON-IPHONE.md) |
+| Backend: 58 free sources, verification engine, API | `backend/` | [DEPLOY.md](docs/DEPLOY.md) |
+| How verification works and its limits | | [VERIFICATION-STRATEGY.md](docs/VERIFICATION-STRATEGY.md) |
+| Measured quality | `backend/eval/` | [QUALITY.md](docs/QUALITY.md) |
+| Engine replay on a sample news day | | `docs/verifier-demo.html` |
+| Original plan | | [PLAN.md](docs/PLAN.md) |
 
 ## Requirements
 - macOS with Xcode 16 or newer

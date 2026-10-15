@@ -101,7 +101,7 @@ const INCIDENT_GROUPS: Record<string, string[]> = {
   election: ["election"], protest: ["protest"], outbreak: ["outbreak"],
   // Armed attacks. ("Strike" is left out: earthquakes, storms, armies and unions all strike.)
   shell: ["attack"], airstrike: ["attack"], bomb: ["attack"], missile: ["attack"], drone: ["attack"], raid: ["attack"],
-  walkout: ["labour"],
+  walkout: ["labour"], union: ["labour"], wage: ["labour"], miner: ["labour"], worker: ["labour"], pay: ["labour"],
   truce: ["diplomacy"], talk: ["diplomacy"], summit: ["diplomacy"], sanction: ["diplomacy"],
 };
 

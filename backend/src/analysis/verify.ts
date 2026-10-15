@@ -97,8 +97,17 @@ export function verifyEvent(
   const counted = event.origins.filter((o) => o.kind !== "signal" && !ownCountryStateMedia.includes(o));
   const disputes = disputingArticles(event, articles, claims);
   const disputingOrigins = counted.filter((o) => o.articleIds.some((id) => disputes.has(id)));
-  const retracting = counted.some((o) => o.articleIds.some((id) => claims.get(id)?.headlineRetraction));
   const confirmingOrigins = counted.filter((o) => o.articleIds.some((id) => !disputes.has(id)));
+  // A correction retracts the event when it negates the core claim ("…has not been arrested"), or when too
+  // few other sources remain. Correcting a detail ("crash caused no deaths, 20 injured") leaves the event.
+  const correctingOrigins = counted.filter((o) => o.articleIds.some((id) => claims.get(id)?.headlineRetraction));
+  const fullRetraction = event.articleIds.some((id) => {
+    const c = claims.get(id);
+    return c?.headlineRetraction && isCoreRetraction(articles.get(id)?.title ?? "", c);
+  });
+  const othersConfirming = confirmingOrigins.filter((o) => !correctingOrigins.includes(o));
+  const retracting = correctingOrigins.length > 0 && (fullRetraction || othersConfirming.length < 2);
+  const partlyCorrected = correctingOrigins.length > 0 && !retracting;
 
   const verification = statusOf({
     confirming: confirmingOrigins.length,
@@ -109,6 +118,7 @@ export function verifyEvent(
     stateMediaOwnCountry: ownCountryStateMedia.length,
     retracting,
   });
+  if (partlyCorrected) verification.reason += " One source corrected a detail of its earlier report.";
 
   const firstReport = counted
     .flatMap((o) => o.articleIds.map((id) => articles.get(id)))
@@ -145,10 +155,27 @@ function disputingArticles(event: NewsEvent, articles: Map<string, Article>, cla
     for (const term of tokenize(`${article?.title ?? ""} ${article?.summary ?? ""}`)) reported.add(term);
   }
   return new Set(denials.filter((id) => {
-    const denied = tokenize(claims.get(id)?.deniedText ?? "").filter((t) => !DENIED_FILLER.has(t));
-    // Nothing specific to compare ("…is fake"), or nothing else to compare with: it disputes the event.
-    return denied.length === 0 || reported.size === 0 || denied.some((t) => reported.has(t));
+    const denied = [...new Set(tokenize(claims.get(id)?.deniedText ?? "").filter((t) => !DENIED_FILLER.has(t)))];
+    // Nothing specific to compare, or nothing else to compare with: it disputes the event.
+    if (denied.length === 0 || reported.size === 0) return true;
+    // Most of what is denied must be what the event reports. "Viral video of shark in flooded street is fake"
+    // shares only "flood" with a hurricane story: it denies a side claim.
+    const overlap = denied.filter((t) => reported.has(t)).length;
+    // A denial that brings two or more specifics the story never mentioned ("viral", "shark") is about
+    // something else, even when it shares setting words ("flooded Tallahassee street").
+    const unmentioned = denied.length - overlap;
+    return overlap / denied.length >= 0.5 && unmentioned <= 1;
   }));
+}
+
+/**
+ * The correction negates the story itself ("…has not been arrested", "…did not resign"), rather than a detail.
+ * A correction that still states a figure ("caused no deaths, 20 injured") corrects a detail.
+ */
+function isCoreRetraction(title: string, claims: ArticleClaims): boolean {
+  const negates = /\b(?:not|never|no|didn['’]t|hasn['’]t|wasn['’]t|false|untrue)\b/i.test(title.replace(/^correction:\s*/i, ""));
+  const keepsFigures = claims.numbers.some((n) => n.value > 0);
+  return negates && !keepsFigures;
 }
 
 function statusOf(c: Omit<Verification, "status" | "reason"> & { retracting: boolean }): Verification {

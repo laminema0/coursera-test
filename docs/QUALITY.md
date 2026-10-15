@@ -156,3 +156,29 @@ pass).
   *harder* here than in production; the synthetic set covers scale but not language.
 - One labeller; some labels are judgement calls (e.g. whether a neighbouring country's screening measures belong to the
   outbreak event: here yes; whether a UN aid release two days later belongs to the quake: here yes).
+
+## Update: scoped corrections and denials
+
+Changes, made using train-split mistakes only:
+- **Corrections** retract an event only if they negate the core claim ("…has not been arrested") or fewer than two other
+  independent sources remain. A correction of a detail ("crash caused no deaths, 20 injured") keeps the status and adds
+  "One source corrected a detail of its earlier report" to the reason.
+- **Denials** dispute an event only if at least half of the denied terms appear in the rest of the event and at most one
+  denied term is new. "Viral video of shark in flooded street is fake" no longer disputes the hurricane story.
+- Denied text is taken from before the denial word when nothing follows it ("… is fake").
+- New phrasings: "police say no MP has been arrested" (denial), "120,000 flee homes", "moved to temporary shelters",
+  "residents of Isabela and Cagayan were evacuated".
+- Labour words (union, wage, miner, worker, pay) form their own incident type, so a mine strike in Arequipa stays apart
+  from the Arequipa earthquake.
+
+| Metric (train / test / all) | Before this update | After |
+|---|---|---|
+| Grouping B³ F1 | 93.7 / 93.4 / 93.6 | 94.6 / 93.4 / 94.1 |
+| Numbers F1 | 99.6 / 96.7 / 98.5 | 100 / 96.7 / 98.7 |
+| Attribution accuracy | 99.3 / 96.6 / 98.2 | 100 / 96.6 / 98.7 |
+| Denial recall | — / — / 81.8 | 100 / 66.7 / 90.9 |
+| Status accuracy | — / — / 89.5 | 97.1 / 86.4 / 93.0 |
+| Status (true grouping) | — / — / — | 100 / 95.5 / 98.2 |
+
+The remaining status error on the train split comes from a grouping merge: a hurricane story absorbed a related sports story and
+a hoax story that are labelled as separate events. Fixing it means tuning on held-out events, so it was left alone.

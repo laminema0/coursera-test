@@ -64,7 +64,9 @@ const OUTCOME_WORDS = "killed|(?:confirmed |found |shot )?dead|died|dies|deaths?
 
 // "18 people on board were killed", "All 18 aboard killed"
 const ON_BOARD = String.raw`(?:(?:aboard|on board)\s+)?`;
-const COUNT_PATTERN = new RegExp(String.raw`\b${QUAL}${NUM}\s+${WHO}${ON_BOARD}${AUX}(${OUTCOME_WORDS})\b`, "gi");
+// "120,000 residents of Isabela and Cagayan were evacuated"
+const OF_PLACE = String.raw`(?:of\s+(?!the\b|these\b|those\b|them\b|whom\b|which\b|us\b)[\w-]+(?:\s+(?:and|&)\s+[\w-]+)?\s+)?`;
+const COUNT_PATTERN = new RegExp(String.raw`\b${QUAL}${NUM}\s+${WHO}${OF_PLACE}${ON_BOARD}${AUX}(${OUTCOME_WORDS})\b`, "gi");
 const TOLL_VERBS = "rises|rose|risen|climbs|climbed|reaches|reached|jumps|jumped|stands|stood|increases|increased|hits|hit|soars|soared|grows|grew";
 // Each toll pattern captures (qualifier, number). "Toll" alone means the death toll in news copy ("toll climbs to 8").
 const TOLL_PATTERNS = [
@@ -92,6 +94,9 @@ const LIVES_PATTERN = new RegExp(String.raw`\b(?:claimed|claiming|claims|cost|co
 const MAGNITUDE_PATTERN = /\b(?:magnitude(?:-|\s+)(?:of\s+)?(\d(?:\.\d)?)|(\d\.\d)(?:-|\s+)magnitude|M\s?(\d\.\d)\b)/gi;
 // Evacuation figures are usually phrased around the order, not the outcome word.
 const EVACUATION_PATTERNS = [
+  // "120,000 flee homes", "5,000 residents fled their homes", "about 2,000 moved to temporary shelters"
+  new RegExp(String.raw`\b${QUAL}${NUM}\s+${WHO}(?:of\s+(?!the\b|these\b|those\b|them\b|whom\b|which\b|us\b)[\w-]+(?:\s+(?:and|&)\s+[\w-]+)?\s+)?(?:(?:were|are|have been|had been|have|had)\s+)?(?:flee|flees|fled|fleeing)\s+(?:their\s+)?homes?\b`, "gi"),
+  new RegExp(String.raw`\b${QUAL}${NUM}\s+${WHO}(?:of\s+(?!the\b|these\b|those\b|them\b|whom\b|which\b)[\w-]+\s+)?(?:(?:were|are|have been|had been)\s+)?(?:moved|relocated|taken)\s+to\s+(?:temporary\s+|emergency\s+)?(?:shelters?|evacuation centres?|evacuation centers?|safety)\b`, "gi"),
   // "forced the evacuation of about 15,000 residents", "evacuation order for 2,000 residents"
   new RegExp(String.raw`\bevacuations?(?:\s+orders?)?\s+(?:of|for)\s+${QUAL}${NUM}`, "gi"),
   // "15,000 people ordered to evacuate", "300,000 residents are under mandatory evacuation orders"
@@ -125,7 +130,7 @@ const NAMED_SPEAKER = /^(?:[A-Z][a-z]+\s){1,2}(?:says|said|claims|confirms)\b/;
 const DENIAL_WORDS = String.raw`den(?:y|ies|ied)|reject(?:s|ed)?|refut(?:e|es|ed)|contradict(?:s|ed|ing)?|dismiss(?:es|ed)? (?:the )?(?:reports?|claims?)|false|fake|hoax|debunk(?:s|ed)?|no evidence|not true|misquot(?:e|ed)|fabricated|untrue`;
 const DENIAL = new RegExp(String.raw`\b(${DENIAL_WORDS}|denial)\b`, "i");
 // In a headline, the noun "denial" usually refers to an earlier denial ("…after Fund denial"), so only verbs count.
-const HEADLINE_DENIAL = new RegExp(String.raw`\b(${DENIAL_WORDS})\b`, "i");
+const HEADLINE_DENIAL = new RegExp(String.raw`\b(${DENIAL_WORDS}|(?:says?|said)\s+no\s+(?:\w+\s+){0,2}(?:has|have|had|was|were)\s+(?:been\s+)?\w+ed|(?:says?|said)\s+(?:\w+\s+){0,3}(?:has|have|had|was|were)\s+not\s+(?:been\s+)?\w+ed)\b`, "i");
 // "X denies responsibility", "rejects accusations", "…, blames the army": disputes who did it, not that it happened.
 const RESPONSIBILITY = /\b(responsibility|involvement|accusations?|allegations?|blames?|blaming|role in)\b/i;
 const RETRACTION = /\b(?:retract(?:s|ed|ion)?\b|withdr[ae]w (?:the |its |their )?(?:story|report|claim)\b|correction:|corrected an earlier\b)/i;
@@ -183,7 +188,7 @@ export function extractClaims(title: string, summary?: string): ArticleClaims {
         }
       }
       if (/toll/i.test(sentence)) for (const pattern of TOLL_PATTERNS) for (const m of sentence.matchAll(pattern)) add("killed", m[2]!, m[1], m);
-      if (/evacuat|flee/i.test(sentence)) for (const pattern of EVACUATION_PATTERNS) for (const m of sentence.matchAll(pattern)) add("evacuated", m[2]!, m[1], m);
+      if (/evacuat|flee|fled|shelter|relocated/i.test(sentence)) for (const pattern of EVACUATION_PATTERNS) for (const m of sentence.matchAll(pattern)) add("evacuated", m[2]!, m[1], m);
       if (/bodies/i.test(sentence)) for (const m of sentence.matchAll(BODIES_PATTERN)) add("killed", m[2]!, m[1], m);
       if (/arrests? of/i.test(sentence)) for (const m of sentence.matchAll(ARREST_OF_PATTERN)) add("arrested", m[2]!, m[1], m);
       if (/lives/i.test(sentence)) for (const m of sentence.matchAll(LIVES_PATTERN)) add("killed", m[2] ?? m[4]!, m[1] ?? m[3], m);
@@ -292,8 +297,14 @@ function isBackground(sentence: string, index: number, length: number): boolean 
 
 /** The words after the denial verb, up to the next clause: what is being denied. */
 function deniedTextOf(title: string, match: RegExpExecArray): string {
-  const after = title.slice(match.index + match[0].length);
-  return after.split(/,|;|:|\s[-–—]\s|\b(?:after|following|amid|as|over|says?|said)\b/i)[0]!.trim();
+  const cut = (text: string) => text.split(/,|;|:|\s[-–—]\s|\b(?:after|following|amid|as|over|says?|said)\b/i)[0]!.trim();
+  // "Police say no MP has been arrested": the denied claim is inside the match itself.
+  const inside = /\bno\b|\bnot\b/i.test(match[0]) ? match[0].replace(/^(?:says?|said)\s+/i, "") : "";
+  const after = cut(title.slice(match.index + match[0].length));
+  if (inside || after) return `${inside} ${after}`.trim();
+  // "Viral video of shark in flooded street is fake": the denied claim comes before the denial word.
+  const before = title.slice(0, match.index).split(/[:;]|\s[-–—]\s/).at(-1) ?? "";
+  return before.replace(/\b(?:is|are|was|were)\s*$/i, "").trim();
 }
 
 /** Keeps the noun phrase right before the verb: "Ruritania finance minister Karl Weber". */

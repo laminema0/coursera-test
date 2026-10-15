@@ -147,3 +147,27 @@ test("a headline denial of a side rumour or of responsibility doesn't dispute th
   assert.equal(event.articleIds.length, 3);
   assert.equal(event.verification.status, "corroborated");
 });
+
+test("a correction of a detail keeps the story; a correction of the story retracts it", () => {
+  const base = [
+    article("l1", "guardian", "Lisbon tram derails in Alfama, injuring 20"),
+    article("l2", "bbc-world", "Lisbon tram derailment injures 20", undefined, "2026-10-15T10:10:00Z"),
+    article("l3", "dw", "Tram derails in Lisbon's Alfama district, 20 hurt", undefined, "2026-10-15T10:20:00Z"),
+  ];
+  const detail = analyze([...base, article("l4", "guardian", "Correction: Lisbon tram derailment caused no deaths, 20 injured", undefined, "2026-10-15T11:00:00Z")], sourceMap)[0]!;
+  assert.equal(detail.verification.status, "corroborated");
+  assert.match(detail.verification.reason, /corrected a detail/);
+
+  const core = analyze([...base, article("l5", "guardian", "Correction: no Lisbon tram derailed in Alfama; reports were wrong", undefined, "2026-10-15T11:00:00Z")], sourceMap)[0]!;
+  assert.equal(core.verification.status, "retracted");
+});
+
+test("a denial of a side claim inside a big story doesn't dispute it", () => {
+  const items = [
+    article("h1", "guardian", "Hurricane Lorena floods Tallahassee streets, 3 dead"),
+    article("h2", "bbc-world", "Hurricane Lorena: flooding in Tallahassee kills 3", undefined, "2026-10-15T10:10:00Z"),
+    article("h3", "npr", "Viral video of shark swimming in flooded Tallahassee street is fake", undefined, "2026-10-15T10:30:00Z"),
+  ];
+  const event = analyze(items, sourceMap).find((e) => e.articleIds.includes("h1"))!;
+  assert.notEqual(event.verification.status, "disputed");
+});

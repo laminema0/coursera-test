@@ -105,3 +105,15 @@ test("plural verbs, recovered bodies, 'on board' and 'arrest of'", () => {
   assert.deepEqual(numbers("Plane crash", "The plane crashed, killing all 18 people on board, officials said."), ["killed=18:official"]);
   assert.deepEqual(numbers("Iran claims arrest of 12 'Mossad agents'"), ["arrested=12:official"]);
 });
+
+test("evacuations with a place name, fleeing homes, and 'says no' denials", () => {
+  assert.deepEqual(numbers("Typhoon slams into Isabela; 120,000 flee homes", "Some 120,000 residents of Isabela and Cagayan were evacuated ahead of landfall, the Office of Civil Defense said."), [
+    "evacuated=120000(about):official",
+  ]);
+  assert.deepEqual(numbers("Quake: about 2,000 moved to temporary shelters"), ["evacuated=2000(about):unattributed"]);
+  assert.deepEqual(numbers("Tram derailment injures 20", "Officials said four of the injured were in serious condition."), ["injured=20:unattributed"]);
+  const denial = extractClaims("Police say no MP has been arrested after reports about James Whitcombe");
+  assert.equal(denial.headlineDenial, true);
+  assert.match(denial.deniedText ?? "", /MP has been arrested/);
+  assert.equal(extractClaims("Viral video of shark in flooded street is fake").deniedText, "Viral video of shark in flooded street");
+});

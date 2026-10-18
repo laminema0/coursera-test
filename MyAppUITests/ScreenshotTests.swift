@@ -13,35 +13,39 @@ final class ScreenshotTests: XCTestCase {
     @MainActor
     func testCaptureLightScreens() {
         XCUIDevice.shared.appearance = .light
+        sleep(2)
         captureAll(theme: "light", includeOnboarding: true)
     }
 
     @MainActor
     func testCaptureDarkScreens() {
         XCUIDevice.shared.appearance = .dark
+        sleep(2)
         captureAll(theme: "dark", includeOnboarding: false)
     }
 
     @MainActor
     private func captureAll(theme: String, includeOnboarding: Bool) {
         app = XCUIApplication()
-        app.launchArguments += ["-hasCompletedOnboarding", includeOnboarding ? "NO" : "YES"]
+        if includeOnboarding {
+            // The flag is stored as JSON data, so a plain argument reads as "not completed": onboarding shows again.
+            app.launchArguments += ["-hasCompletedOnboarding", "NO"]
+        }
         app.launch()
 
-        if includeOnboarding {
-            let button = app.buttons["onboarding.primaryButton"]
-            if button.waitForExistence(timeout: 10) {
-                snap("01-onboarding-1", theme)
-                // Tap through every page; the last tap ("Get Started") leaves onboarding.
-                var page = 2
-                while button.exists && page <= 8 {
-                    button.tap()
-                    sleep(1)
-                    if button.exists {
-                        snap("01-onboarding-\(page)", theme)
-                    }
-                    page += 1
+        // Onboarding shows on a fresh install; the dark pass taps through it without capturing.
+        let button = app.buttons["onboarding.primaryButton"]
+        if button.waitForExistence(timeout: 10) {
+            if includeOnboarding { snap("01-onboarding-1", theme) }
+            // Tap through every page; the last tap ("Get Started") leaves onboarding.
+            var page = 2
+            while button.exists && page <= 8 {
+                button.tap()
+                sleep(1)
+                if includeOnboarding && button.exists {
+                    snap("01-onboarding-\(page)", theme)
                 }
+                page += 1
             }
         }
 

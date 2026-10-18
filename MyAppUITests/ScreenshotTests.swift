@@ -32,8 +32,9 @@ final class ScreenshotTests: XCTestCase {
             let button = app.buttons["onboarding.primaryButton"]
             if button.waitForExistence(timeout: 10) {
                 snap("01-onboarding-1", theme)
+                // Tap through every page; the last tap ("Get Started") leaves onboarding.
                 var page = 2
-                while button.exists && page <= 4 {
+                while button.exists && page <= 8 {
                     button.tap()
                     sleep(1)
                     if button.exists {

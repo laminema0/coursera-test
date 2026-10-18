@@ -1,0 +1,76 @@
+name: App screenshots
+
+# Runs the app in an iPhone simulator, walks through every screen (MyAppUITests/ScreenshotTests.swift)
+# and commits the screenshots to the `screenshots` branch.
+on:
+  workflow_dispatch:
+  push:
+    branches: [ios-foundation]
+    paths: ["MyApp/**", "Packages/DesignSystem/**", "MyAppUITests/ScreenshotTests.swift", ".github/workflows/screenshots.yml"]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: screenshots
+  cancel-in-progress: true
+
+jobs:
+  screenshots:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install tools
+        run: brew install xcodegen
+      - name: Generate project
+        run: xcodegen generate
+      - name: Boot an iPhone simulator with a clean status bar
+        id: sim
+        run: |
+          UDID=$(xcrun simctl list devices available -j | python3 -c '
+          import json, sys
+          devices = json.load(sys.stdin)["devices"]
+          ios = [d for runtime, ds in devices.items() if "iOS" in runtime for d in ds]
+          pro = [d for d in ios if "Pro" in d["name"] and "Max" not in d["name"]]
+          print((pro or [d for d in ios if d["name"].startswith("iPhone")])[-1]["udid"])')
+          echo "udid=$UDID" >> "$GITHUB_OUTPUT"
+          xcrun simctl boot "$UDID"
+          xcrun simctl bootstatus "$UDID" -b
+          xcrun simctl status_bar "$UDID" override --time "9:41" --batteryState charged --batteryLevel 100 --cellularBars 4 --wifiBars 3
+          xcrun simctl list devices | grep "$UDID"
+      - name: Capture screens
+        env:
+          TEST_RUNNER_SCREENSHOTS: "1"
+        run: |
+          set -o pipefail
+          xcodebuild test -project MyApp.xcodeproj -scheme MyApp \
+            -destination "id=${{ steps.sim.outputs.udid }}" \
+            -only-testing:MyAppUITests/ScreenshotTests \
+            -resultBundlePath shots.xcresult CODE_SIGNING_ALLOWED=NO | tail -40
+      - name: Export screenshots
+        if: always()
+        run: |
+          mkdir -p export shots
+          xcrun xcresulttool export attachments --path shots.xcresult --output-path export
+          python3 - <<'PY'
+          import json, os, shutil
+          manifest = json.load(open("export/manifest.json"))
+          for test in manifest:
+              for a in test.get("attachments", []):
+                  name = a.get("suggestedHumanReadableName", a["exportedFileName"])
+                  # "light-02-news_0_<uuid>.png" -> "light-02-news.png"
+                  base = name.split("_")[0]
+                  shutil.copy(os.path.join("export", a["exportedFileName"]), os.path.join("shots", base + ".png"))
+          print(sorted(os.listdir("shots")))
+          PY
+      - name: Commit to the screenshots branch
+        if: always()
+        run: |
+          cd shots
+          [ -n "$(ls)" ] || exit 1
+          git init -q -b screenshots
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -q -m "Screenshots of ${GITHUB_SHA::7}"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" screenshots

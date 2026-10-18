@@ -43,24 +43,35 @@ jobs:
           TEST_RUNNER_SCREENSHOTS: "1"
         run: |
           set -o pipefail
-          xcodebuild test -project MyApp.xcodeproj -scheme MyApp \
-            -destination "id=${{ steps.sim.outputs.udid }}" \
-            -only-testing:MyAppUITests/ScreenshotTests \
-            -resultBundlePath shots.xcresult CODE_SIGNING_ALLOWED=NO | tail -40
+          failed=0
+          # Appearance set from inside a UI test doesn't stick, so switch the simulator before each pass.
+          for theme in Light Dark; do
+            xcrun simctl ui "${{ steps.sim.outputs.udid }}" appearance "$(echo "$theme" | tr A-Z a-z)"
+            xcodebuild test -project MyApp.xcodeproj -scheme MyApp \
+              -destination "id=${{ steps.sim.outputs.udid }}" \
+              -only-testing:MyAppUITests/ScreenshotTests/testCapture${theme}Screens \
+              -resultBundlePath "shots-$theme.xcresult" CODE_SIGNING_ALLOWED=NO | tail -40 || failed=1
+          done
+          exit "$failed"
       - name: Export screenshots
         if: always()
         run: |
           mkdir -p export shots
-          xcrun xcresulttool export attachments --path shots.xcresult --output-path export
+          for theme in Light Dark; do
+            [ -d "shots-$theme.xcresult" ] || continue
+            xcrun xcresulttool export attachments --path "shots-$theme.xcresult" --output-path "export/$theme"
+          done
           python3 - <<'PY'
           import json, os, shutil
-          manifest = json.load(open("export/manifest.json"))
-          for test in manifest:
-              for a in test.get("attachments", []):
-                  name = a.get("suggestedHumanReadableName", a["exportedFileName"])
-                  # "light-02-news_0_<uuid>.png" -> "light-02-news.png"
-                  base = name.split("_")[0]
-                  shutil.copy(os.path.join("export", a["exportedFileName"]), os.path.join("shots", base + ".png"))
+          for theme in os.listdir("export"):
+              folder = os.path.join("export", theme)
+              for test in json.load(open(os.path.join(folder, "manifest.json"))):
+                  for a in test.get("attachments", []):
+                      name = a.get("suggestedHumanReadableName", a["exportedFileName"])
+                      # "light-02-news_0_<uuid>.png" -> "light-02-news.png"; skip failure diagnostics.
+                      base = name.split("_")[0]
+                      if base.startswith(("light-", "dark-")):
+                          shutil.copy(os.path.join(folder, a["exportedFileName"]), os.path.join("shots", base + ".png"))
           print(sorted(os.listdir("shots")))
           PY
       - name: Commit to the screenshots branch

@@ -2,6 +2,15 @@
 
 Every approved change to the style system. Newest on top.
 
+## 2026-10-21 — v1.1.0
+- New character: `characters/panda.md` (first test character).
+- DESIGN.md: animal markings may be solid black.
+- New `tools/inkline.py`: code-drawn wobbly tapered lines, fills and
+  hand-lettered capitals (no line boil — every stroke is seeded).
+- EP01 "Berlinovo Apartment": full code pipeline from voice recording to
+  MP4 (pitch shift, loudness lip-flap, blinks, SFX, title card).
+- Voice recordings and rendered videos are git-ignored (public repo).
+
 ## 2026-10-21 — v1.0.0
 - Initial style system created from reference frames
   ("Kyle and Davey ~Paul Returns~", 1,093 sampled frames).

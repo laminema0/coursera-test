@@ -47,6 +47,10 @@ The outer white is part of the look: it makes a landscape cartoon read as a
 | `ink.subtitle` | `#000000` | Subtitle text |
 
 No other colors. No gradients, no gray fills, no drop shadows.
+
+**Animal markings** (added v1.1): an animal's natural black markings
+(panda ears, eye patches, limbs) may be solid `ink.fill`. Keep them to the
+markings that make the animal readable, and keep the face tiny inside them.
 (One exception allowed: the title card lettering may be drawn in
 `ink.background` gray outlines.)
 

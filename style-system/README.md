@@ -18,6 +18,8 @@ comedy shorts in the style of the reference video (frames studied:
 | `episodes/_TEMPLATE/` | Script + shot list template (copy per episode) |
 | `templates/frame_1080x1920.svg` | Blank frame with picture band + subtitle guides |
 | `templates/mouth_chart.svg` | The 6 standard mouth shapes |
+| `tools/inkline.py` | Code drawing library: wobbly tapered lines, fills, hand lettering |
+| `episodes/ep01-berlinovo-apartment/` | First episode: voice → finished MP4 build script |
 | `tools/compose_frame.py` | Puts art + subtitle onto a correct 1080×1920 frame |
 | `CHANGELOG.md` | Every approved change to the style, dated |
 

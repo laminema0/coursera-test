@@ -191,40 +191,43 @@ COAT = [(-u, v) for u, v in COAT_R[:-1]] + [(0, 1.94)] + [(u, v) for u, v in rev
 
 
 def man_back(ink, cx, feet, W, slump=0, flutter=0):
-    """Panda in human form, from behind: thin, slumped, long coat, hat, panda ears/paws/legs."""
+    """Tiger in human form, from behind: thin, slumped, long coat, hat, striped head and tail."""
     top = feet - 2.32 * W
 
     def P(u, v):
         return (cx + (u - 0.05 * (1 - v / 1.94)) * W, top + v * W)
 
     lw = 3
-    for sx in (-1, 1):                                               # thin black panda legs + feet
-        ink.line([P(sx * 0.1, 1.88), P(sx * 0.11, 2.26)], 0.085 * W, FILL, seed=10 + sx, taper=0.05)
-        ink.blob(*P(sx * 0.13, 2.29), 0.08 * W, 0.045 * W, FILL, seed=12 + sx)
+    for sx in (-1, 1):                                               # thin legs + feet
+        ink.line([P(sx * 0.1, 1.9), P(sx * 0.11, 2.27)], lw, CHAR, seed=10 + sx)
+        ink.blob(*P(sx * 0.13, 2.29), 0.08 * W, 0.04 * W, FILL, seed=12 + sx)
+    tail = [P(0.12, 1.86), P(0.3, 2.05), P(0.42, 2.0), P(0.47, 1.86)]  # tail hangs out under the coat
+    ink.line(tail, 0.065 * W, CHAR, seed=14, taper=0.05)
+    ink.line(tail, 0.065 * W - 2 * lw, WHITE, seed=14, taper=0.05)
+    for k, (u, v) in enumerate(((0.24, 1.97), (0.36, 2.03), (0.44, 1.95))):
+        ink.line([P(u - 0.025, v - 0.03), P(u + 0.02, v + 0.03)], 2.5, CHAR, seed=15 + k, taper=0.3)
     hv = 0.44 + slump * 0.025                                        # head hangs low, droops on out-breath
-    for sx in (-1, 1):                                               # black ears poking out under the brim
-        ink.shape(ellipse(*P(sx * 0.25, hv - 0.13), 0.075 * W, 0.07 * W, 0, 360, 14)[:-1], lw, CHAR, FILL,
+    for sx in (-1, 1):                                               # rounded ears under the brim
+        ink.shape(ellipse(*P(sx * 0.22, hv - 0.14), 0.07 * W, 0.075 * W, 0, 360, 14)[:-1], lw, CHAR, WHITE,
                   seed=20 + sx)
-    ink.shape(ellipse(*P(0, hv), 0.23 * W, 0.24 * W, 0, 360, 22)[:-1], lw, CHAR, WHITE, seed=seed_of("phead"))
+    ink.shape(ellipse(*P(0, hv), 0.23 * W, 0.24 * W, 0, 360, 22)[:-1], lw, CHAR, WHITE, seed=seed_of("thead"))
+    for k, u in enumerate((-0.09, 0.0, 0.09)):                       # three head stripes
+        ink.line([P(u * 1.1, hv - 0.05), P(u, hv + 0.08)], 3, CHAR, seed=23 + k, taper=0.35)
     coat = list(COAT)
     if flutter:
         coat = [(u + (0.07 if (v > 1.6 and u > 0) else 0) * flutter, v + (0.03 if v > 1.85 else 0)) for u, v in coat]
     ink.shape([P(u, v) for u, v in coat], lw, CHAR, WHITE, seed=seed_of("coat"))
-    ink.shape([P(-0.16, 0.68), P(-0.15, 0.6), P(0.0, 0.63), P(0.15, 0.6), P(0.16, 0.68), P(0.0, 0.71)],
-              lw, CHAR, WHITE, seed=24)                              # turned-up collar
-    ink.line([P(0.0, 1.58), P(0.01, 1.93)], 2.5, CHAR, seed=25)      # vent
-    ink.line([P(-0.34, 1.3), P(0.0, 1.33), P(0.35, 1.3)], 2, CHAR, seed=26)   # belt
+    ink.line([P(-0.15, 0.68), P(0.0, 0.72), P(0.15, 0.68)], lw, CHAR, seed=26)   # collar
     by = hv - 0.17                                                   # hat: brim droops at the sides
-    ink.shape([P(-0.36, by + 0.04), P(-0.2, by - 0.03), P(0.0, by - 0.04), P(0.2, by - 0.03), P(0.36, by + 0.04),
+    ink.shape([P(-0.34, by + 0.04), P(-0.2, by - 0.03), P(0.0, by - 0.04), P(0.2, by - 0.03), P(0.34, by + 0.04),
                P(0.2, by + 0.03), P(0.0, by + 0.02), P(-0.2, by + 0.03)], lw, CHAR, WHITE, seed=27)
-    ink.shape([P(-0.19, by), P(-0.18, by - 0.2), P(-0.08, by - 0.25), P(0.0, by - 0.21), P(0.08, by - 0.25),
-               P(0.18, by - 0.2), P(0.19, by)], lw, CHAR, WHITE, seed=28)
-    ink.line([P(-0.185, by - 0.05), P(0.0, by - 0.045), P(0.185, by - 0.05)], 0.05 * W, FILL, seed=29, taper=0.02)
-    for sx in (-1, 1):                                               # thin sleeves + black paws
+    ink.shape([P(-0.18, by), P(-0.17, by - 0.2), P(0.0, by - 0.23), P(0.17, by - 0.2), P(0.18, by)],
+              lw, CHAR, WHITE, seed=28)
+    for sx in (-1, 1):                                               # thin sleeves + small hands
         pts = [P(sx * 0.28, 0.78), P(sx * 0.38, 1.15), P(sx * 0.39, 1.55)]
-        ink.line(pts, 0.12 * W, CHAR, seed=40 + sx, taper=0.03)
-        ink.line(pts, 0.12 * W - 2 * lw, WHITE, seed=40 + sx, taper=0.03)
-        ink.blob(*P(sx * 0.39, 1.61), 0.055 * W, 0.065 * W, FILL, seed=44 + sx)
+        ink.line(pts, 0.11 * W, CHAR, seed=40 + sx, taper=0.03)
+        ink.line(pts, 0.11 * W - 2 * lw, WHITE, seed=40 + sx, taper=0.03)
+        ink.shape(ellipse(*P(sx * 0.39, 1.6), 0.05 * W, 0.055 * W, 0, 360, 12)[:-1], lw, CHAR, WHITE, seed=44 + sx)
 
 
 def train(ink, front, frame):

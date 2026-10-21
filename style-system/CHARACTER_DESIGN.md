@@ -35,8 +35,9 @@ Plain humans are allowed and must still look like this world:
   head big and the features tiny and simple (dot eyes, hook nose, line mouth).
 - Hair = one wavy outline cap + fringe, never strands of detail.
 - Same line weights, black + white only, no shading.
-- A creature "in human form" (e.g. Panda) = human body and clothes, but
-  keep the animal head and the animal's black paws/legs.
+- A creature "in human form" (e.g. Tiger) = human body and clothes, but
+  keep the animal head plus 1–2 tiny animal cues (stripes, a tail).
+  Keep it simple: the fewer marks, the better.
 
 ## 2. Face kit
 

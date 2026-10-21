@@ -2,6 +2,11 @@
 
 Every approved change to the style system. Newest on top.
 
+## 2026-10-21 — v1.4.0
+- EP02 man is now **Tiger** in human form (new `characters/tiger.md`):
+  thin, sad, hat, 3 head stripes + striped tail, kept deliberately simple.
+  Panda's human-form section removed.
+
 ## 2026-10-21 — v1.3.1
 - Panda (human form): thinner, more slumped, brimmed hat with ears poking out.
 

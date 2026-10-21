@@ -1,6 +1,6 @@
 # Panda
 
-- **Status**: draft (first test, EP01)
+- **Status**: draft (EP01, EP02 as human form)
 - **Created**: 2026-10-21   **Last changed**: 2026-10-21
 - **Art**: drawn in code — `episodes/ep01-berlinovo-apartment/build.py` → `panda()`
 
@@ -37,5 +37,17 @@ doesn't react when a bird turns into a chair on his shoulder.
 - Typical gestures: butt scratch (back view), one arm raised palm-up while talking
 - Never does: big reactions; eyes only slide toward the weird thing, then a slow blink
 
+## Human form (EP02)
+Same Panda, but with a human body. Drawn from behind only so far
+(`episodes/ep02-ice-cream/build.py` → `man_back()`).
+| Part | Rule |
+|---|---|
+| Head | round white head on a human body, black ears; droops 0.025W on each out-breath |
+| Body | long coat with shoulders, turned-up collar, belt, back vent |
+| Arms | coat sleeves (outlined noodles) ending in **black panda paws** |
+| Legs | **black panda legs** and feet under the coat |
+| Mood | sad, slumped, silent |
+
 ## Change log
+- 2026-10-21 — human form added (EP02: the man on the platform is Panda)
 - 2026-10-21 — created for EP01

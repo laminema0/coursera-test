@@ -2,6 +2,11 @@
 
 Every approved change to the style system. Newest on top.
 
+## 2026-10-21 — v1.3.0
+- EP02: the man on the platform is **Panda in human form**; the kid is a
+  **human child**. `sad-man.md` folded into `panda.md`, kid bible rewritten.
+- CHARACTER_DESIGN.md: rules for humans and creatures in human form.
+
 ## 2026-10-21 — v1.2.0
 - New characters: `sad-man.md`, `ice-cream-kid.md`.
 - ANIMATION.md: slow push-in allowed for dread (EP02).

@@ -56,7 +56,7 @@ TITLE_FADE = (24.8, 25.4)
 
 # man: (cx, feet_y, W)   kid: (cx, top, W)
 MAN = (540, 572, 130)
-KID = (430, 130, 400)
+KID = (430, 110, 400)
 
 
 def shot_at(t):
@@ -186,39 +186,42 @@ def exterior_bg(ink):
 
 
 # ---------------------------------------------------------------- characters
-MAN_R = [(0, 0), (0.28, 0.05), (0.4, 0.25), (0.42, 0.55), (0.5, 0.75), (0.55, 1.0),
-         (0.56, 1.5), (0.57, 1.85), (0.42, 1.93), (0, 1.94)]
-MAN_BODY = MAN_R + [(-u, v) for u, v in reversed(MAN_R[1:-1])]
+COAT_R = [(0.18, 0.58), (0.45, 0.68), (0.55, 0.85), (0.56, 1.4), (0.57, 1.85), (0.42, 1.93), (0, 1.94)]
+COAT = [(-u, v) for u, v in COAT_R[:-1]] + [(0, 1.94)] + [(u, v) for u, v in reversed(COAT_R[:-1])]
 
 
 def man_back(ink, cx, feet, W, slump=0, flutter=0):
-    """The sad man, from behind. One long coat, thinning hair, slumped."""
+    """Panda in human form, from behind: human body in a long coat, panda head, ears, paws and legs."""
     top = feet - 2.32 * W
 
     def P(u, v):
-        dv = slump * 0.02 if v < 0.9 else 0
-        return (cx + (u - 0.07 * (1 - v / 1.94)) * W, top + (v + dv) * W)
+        return (cx + (u - 0.07 * (1 - v / 1.94)) * W, top + v * W)
 
     lw = 3
-    for sx in (-1, 1):                                               # legs + shoes
-        ink.line([P(sx * 0.15, 1.9), P(sx * 0.16, 2.28)], lw, CHAR, seed=10 + sx)
-        ink.blob(*P(sx * 0.17, 2.3), 0.09 * W, 0.045 * W, FILL, seed=12 + sx)
-    body = list(MAN_BODY)
+    for sx in (-1, 1):                                               # black panda legs + feet
+        ink.line([P(sx * 0.15, 1.88), P(sx * 0.16, 2.26)], 0.12 * W, FILL, seed=10 + sx, taper=0.05)
+        ink.blob(*P(sx * 0.18, 2.29), 0.1 * W, 0.05 * W, FILL, seed=12 + sx)
+    hv = 0.32 + slump * 0.025                                        # head droops when he breathes out
+    for sx in (-1, 1):                                               # black ears
+        ink.shape(ellipse(*P(sx * 0.21, hv - 0.22), 0.085 * W, 0.08 * W, 0, 360, 14)[:-1], lw, CHAR, FILL,
+                  seed=20 + sx)
+    ink.shape(ellipse(*P(0, hv), 0.27 * W, 0.28 * W, 0, 360, 22)[:-1], lw, CHAR, WHITE, seed=seed_of("phead"))
+    coat = list(COAT)
     if flutter:
-        body = [(u + (0.07 if (v > 1.6 and u > 0) else 0) * flutter, v + (0.03 if v > 1.85 else 0)) for u, v in body]
-    ink.shape([P(u, v) for u, v in body], lw, CHAR, WHITE, seed=seed_of("man"))
-    ink.line([P(-0.4, 0.66), P(-0.1, 0.72), P(0.12, 0.72), P(0.42, 0.64)], lw, CHAR, seed=20)   # collar
-    ink.line([P(0.0, 1.55), P(0.01, 1.93)], 2.5, CHAR, seed=21)                                # vent
-    ink.line([P(-0.48, 1.3), P(0.0, 1.33), P(0.5, 1.3)], 2, CHAR, seed=22)                     # belt
-    for k in range(4):                                                                         # hair
-        x0 = -0.15 + k * 0.1
-        ink.line([P(x0, 0.03), P(x0 + 0.03, 0.12), P(x0 + 0.01, 0.2)], 1.75, CHAR, seed=30 + k)
-    for sx in (-1, 1):                                               # arms (outlined noodles)
-        pts = [P(sx * 0.48, 0.78), P(sx * 0.6, 1.2), P(sx * 0.6, 1.6)]
-        ink.line(pts, 0.14 * W, CHAR, seed=40 + sx, taper=0.05)
-        ink.line(pts, 0.14 * W - 2 * lw, WHITE, seed=40 + sx, taper=0.05)
-        ink.shape(ellipse(*P(sx * 0.6, 1.66), 0.06 * W, 0.07 * W, 0, 360, 12)[:-1], lw, CHAR, WHITE,
-                  seed=44 + sx)
+        coat = [(u + (0.07 if (v > 1.6 and u > 0) else 0) * flutter, v + (0.03 if v > 1.85 else 0)) for u, v in coat]
+    ink.shape([P(u, v) for u, v in coat], lw, CHAR, WHITE, seed=seed_of("coat"))
+    ink.shape([P(-0.22, 0.6), P(-0.2, 0.5), P(0.0, 0.54), P(0.2, 0.5), P(0.22, 0.6), P(0.0, 0.63)],
+              lw, CHAR, WHITE, seed=24)                              # turned-up collar
+    ink.line([P(0.0, 1.55), P(0.01, 1.93)], 2.5, CHAR, seed=25)      # vent
+    ink.line([P(-0.53, 1.3), P(0.0, 1.33), P(0.54, 1.3)], 2, CHAR, seed=26)   # belt
+    for k in range(3):                                               # fur tuft at the nape
+        x0 = -0.08 + k * 0.07
+        ink.line([P(x0, 0.5), P(x0 + 0.02, 0.46), P(x0 + 0.04, 0.5)], 1.75, CHAR, seed=27 + k)
+    for sx in (-1, 1):                                               # sleeves + black paws
+        pts = [P(sx * 0.5, 0.75), P(sx * 0.6, 1.15), P(sx * 0.6, 1.55)]
+        ink.line(pts, 0.16 * W, CHAR, seed=40 + sx, taper=0.03)
+        ink.line(pts, 0.16 * W - 2 * lw, WHITE, seed=40 + sx, taper=0.03)
+        ink.blob(*P(sx * 0.6, 1.62), 0.065 * W, 0.075 * W, FILL, seed=44 + sx)
 
 
 def train(ink, front, frame):
@@ -258,61 +261,77 @@ def headlight(ink, k):
                 (70 + r1 * math.cos(a), 440 + r1 * math.sin(a)), 2, BGC, seed=400 + j, overshoot=0)
 
 
-KID_R = [(0, 0), (0.3, 0.04), (0.48, 0.25), (0.55, 0.6), (0.58, 1.0), (0.55, 1.35), (0.42, 1.55), (0, 1.6)]
-KID_BODY = KID_R + [(-u, v) for u, v in reversed(KID_R[1:-1])]
-SPLATS = [(0.42, 0.33, .035), (0.5, 0.42, .02), (0.37, 0.62, .03), (0.53, 0.66, .025), (0.47, 0.86, .03),
-          (0.47, 1.05, .02), (-0.08, 0.38, .025), (0.06, 0.52, .015), (-0.3, 0.6, .02), (-0.02, 0.24, .018),
-          (-0.3, 1.1, .03), (-0.12, 1.32, .02), (0.0, 0.07, .02)]
+SCOOPS = ((0.37, 0.97, 0.15), (0.36, 0.73, 0.14), (0.35, 0.5, 0.12))
+SPLATS = [(0.33, 0.47, .03), (0.4, 0.55, .018), (0.3, 0.73, .028), (0.42, 0.78, .022), (0.38, 0.98, .028),
+          (0.37, 1.18, .018), (-0.2, 0.62, .022), (0.0, 0.43, .014), (-0.3, 0.42, .018), (-0.1, 0.12, .02),
+          (-0.45, 1.25, .028), (-0.2, 1.4, .02), (0.2, 0.05, .018), (0.12, 0.85, .012)]
 WALL_SPLATS = [(70, 200, 14), (160, 120, 8), (95, 330, 10), (210, 430, 6), (40, 480, 9)]
 
 
 def kid(ink, cx, top, W, lick, eye, splash):
+    """A human child: round head, hair, ears, neck, striped t-shirt, 3-scoop cone."""
     def P(u, v):
         return (cx + u * W, top + v * W)
 
     lw = 4.5
-    ink.shape([P(u, v) for u, v in KID_BODY], lw, CHAR, WHITE, seed=seed_of("kid"))
-    ink.line([P(0.0, 0.0), P(0.04, -0.12), P(0.12, -0.11), P(0.1, -0.04), P(0.05, -0.06)], 2.5, CHAR, seed=1)  # curl
-    ink.line([P(-0.35, 0.95), P(0.0, 1.02), P(0.35, 0.95)], 2.5, CHAR, seed=2)                         # t-shirt
-    for k, v in enumerate((1.12, 1.26, 1.4)):
-        hw = 0.56 if v < 1.3 else 0.5
+    body = [(-0.13, 0.9), (-0.42, 0.98), (-0.6, 1.12), (-0.68, 1.45), (-0.7, 1.8),
+            (0.7, 1.8), (0.68, 1.45), (0.6, 1.12), (0.42, 0.98), (0.13, 0.9)]
+    ink.shape([P(u, v) for u, v in body], lw, CHAR, WHITE, smooth=True, seed=seed_of("kidbody"))
+    for k, v in enumerate((1.22, 1.38, 1.54)):                       # t-shirt stripes
+        hw = 0.64 + (v - 1.2) * 0.15
         ink.line([P(-hw, v), P(hw, v + 0.01)], 2.5, CHAR, seed=3 + k)
-    for ex in (-0.14, 0.06):                                           # eyes: blank kid stare
-        x, y = P(ex, 0.45)
+    ink.line([P(-0.15, 0.94), P(0.0, 1.0), P(0.15, 0.94)], 2.5, CHAR, seed=6)          # neckline
+    ink.shape([P(-0.12, 0.8), P(-0.12, 0.95), P(0.12, 0.95), P(0.12, 0.8)], lw, CHAR, WHITE,
+              smooth=False, seed=7)                                                     # neck
+    for sx in (-1, 1):                                                                  # ears
+        ink.shape(ellipse(*P(sx * 0.42, 0.5), 0.06 * W, 0.09 * W, 0, 360, 14)[:-1], lw, CHAR, WHITE, seed=8 + sx)
+        ink.line(ellipse(*P(sx * 0.425, 0.5), 0.025 * W, 0.045 * W, -80 if sx > 0 else 100,
+                         80 if sx > 0 else 260, 8), 2, CHAR, seed=11 + sx)
+    ink.shape(ellipse(*P(0, 0.45), 0.42 * W, 0.44 * W, 0, 360, 26)[:-1], lw, CHAR, WHITE, seed=seed_of("kidhead"))
+    hair = []                                                                           # messy hair cap
+    for j, a in enumerate(np.linspace(math.pi * 1.02, math.pi * 1.98, 14)):
+        r = 0.45 + (0.035 if j % 2 else 0)
+        hair.append((math.cos(a) * r * 0.97, 0.45 + math.sin(a) * r))
+    fringe = [(0.4, 0.3), (0.28, 0.26), (0.2, 0.32), (0.08, 0.24), (-0.04, 0.31), (-0.16, 0.23),
+              (-0.28, 0.3), (-0.4, 0.28)]
+    ink.shape([P(u, v) for u, v in hair + fringe], lw, CHAR, WHITE, seed=14)
+    ink.line([P(0.0, 0.01), P(0.04, -0.09), P(0.11, -0.08), P(0.08, -0.02)], 2.5, CHAR, seed=15)  # cowlick
+    for ex in (-0.15, 0.08):                                                            # eyes
+        x, y = P(ex, 0.5)
         if eye == "c":
-            ink.line([(x - 0.045 * W, y), (x + 0.045 * W, y + 2)], 3, CHAR, seed=10)
+            ink.line([(x - 0.04 * W, y), (x + 0.04 * W, y + 2)], 3, CHAR, seed=16)
         else:
-            ry = 0.05 * W if eye == "o" else 0.02 * W
-            ink.shape(ellipse(x, y, 0.045 * W, ry, 0, 360, 14)[:-1], 3, CHAR, WHITE, seed=11)
-            ink.blob(x + 0.008 * W, y + (0.006 * W if eye == "o" else 0), 0.018 * W, min(0.018 * W, ry * 0.8),
-                     FILL, seed=12, amp=0)
-    mx, my = P(0.2, 0.63)
+            ry = 0.045 * W if eye == "o" else 0.018 * W
+            ink.shape(ellipse(x, y, 0.038 * W, ry, 0, 360, 14)[:-1], 3, CHAR, WHITE, seed=17)
+            ink.blob(x + 0.006 * W, y + (0.006 * W if eye == "o" else 0), 0.016 * W, min(0.016 * W, ry * 0.8),
+                     FILL, seed=18, amp=0)
+    ink.line([P(-0.02, 0.55), P(-0.04, 0.62), P(0.01, 0.63)], 2.5, CHAR, seed=19)     # nose
+    mx, my = P(0.07, 0.72)
     if lick == "closed":
-        ink.line([(mx - 0.035 * W, my), (mx + 0.03 * W, my + 2)], 3.5, CHAR, seed=13)
+        ink.line([(mx - 0.03 * W, my), (mx + 0.03 * W, my + 2)], 3.5, CHAR, seed=20)
     else:
-        ink.blob(mx, my, 0.04 * W, 0.03 * W, FILL, seed=14)
-    # cone + scoops
-    ink.shape([P(0.3, 0.95), P(0.62, 0.95), P(0.47, 1.5)], lw, CHAR, WHITE, smooth=False, seed=20)
+        ink.blob(mx, my, 0.035 * W, 0.028 * W, FILL, seed=21)
+    ink.shape([P(0.22, 1.08), P(0.52, 1.08), P(0.37, 1.6)], lw, CHAR, WHITE, smooth=False, seed=22)   # cone
     for k in range(3):
-        ink.line([P(0.34 + k * 0.08, 0.97), P(0.44 + k * 0.05, 1.25)], 2, CHAR, seed=21 + k)
-        ink.line([P(0.6 - k * 0.08, 0.97), P(0.5 - k * 0.05, 1.25)], 2, CHAR, seed=24 + k)
-    for k, (u, v, r) in enumerate(((0.46, 0.84, 0.16), (0.45, 0.6, 0.15), (0.44, 0.36, 0.13))):
+        ink.line([P(0.26 + k * 0.08, 1.1), P(0.35 + k * 0.05, 1.36)], 2, CHAR, seed=23 + k)
+        ink.line([P(0.5 - k * 0.08, 1.1), P(0.41 - k * 0.05, 1.36)], 2, CHAR, seed=26 + k)
+    for k, (u, v, r) in enumerate(SCOOPS):
         x, y = P(u, v)
         pts = ellipse(x, y, r * W, r * W * 0.92, 0, 360, 20)[:-1]
         pts = [(px, py + (0.025 * W * (j % 2) if py > y + r * W * 0.5 else 0)) for j, (px, py) in enumerate(pts)]
         ink.shape(pts, lw, CHAR, WHITE, seed=30 + k)
-    for sx, (hu, hv) in ((-1, (0.38, 1.06)), (1, (0.54, 1.13))):    # arms + hands
-        start = P(-0.42, 1.12) if sx < 0 else P(0.55, 1.1)
-        pts = [start, P(0.0, 1.22) if sx < 0 else P(0.6, 1.12), P(hu, hv)]
-        ink.line(pts, 0.07 * W, CHAR, seed=40 + sx, taper=0.05)
-        ink.line(pts, 0.07 * W - 2 * lw, WHITE, seed=40 + sx, taper=0.05)
-        ink.shape(ellipse(*P(hu, hv), 0.05 * W, 0.045 * W, 0, 360, 12)[:-1], lw, CHAR, WHITE, seed=44 + sx)
-    if lick in ("out", "up", "up2"):                                  # tongue
-        tip = {"out": (0.31, 0.64), "up": (0.32, 0.57), "up2": (0.33, 0.53)}[lick]
-        pts = [P(0.2, 0.635), P(0.27, 0.645), P(*tip)]
-        ink.line(pts, 0.085 * W, CHAR, seed=50, taper=0.0)
-        ink.line(pts, 0.085 * W - 2 * 3.5, WHITE, seed=50, taper=0.0)
-        ink.line([P(0.22, 0.637), P(tip[0] - 0.03, (tip[1] + 0.645) / 2)], 2, CHAR, seed=51, taper=0.3)
+    for sx, start, mid, hand in ((-1, (-0.62, 1.3), (-0.1, 1.4), (0.26, 1.24)),        # arms + hands
+                                 (1, (0.64, 1.3), (0.6, 1.36), (0.46, 1.3))):
+        pts = [P(*start), P(*mid), P(*hand)]
+        ink.line(pts, 0.1 * W, CHAR, seed=40 + sx, taper=0.03)
+        ink.line(pts, 0.1 * W - 2 * lw, WHITE, seed=40 + sx, taper=0.03)
+        ink.shape(ellipse(*P(*hand), 0.055 * W, 0.05 * W, 0, 360, 12)[:-1], lw, CHAR, WHITE, seed=44 + sx)
+    if lick in ("out", "up", "up2"):                                                    # tongue
+        tip = {"out": (0.22, 0.73), "up": (0.23, 0.66), "up2": (0.24, 0.62)}[lick]
+        pts = [P(0.07, 0.725), P(0.15, 0.735), P(*tip)]
+        ink.line(pts, 0.075 * W, CHAR, seed=50, taper=0.0)
+        ink.line(pts, 0.075 * W - 2 * 3.5, WHITE, seed=50, taper=0.0)
+        ink.line([P(0.09, 0.727), P(tip[0] - 0.03, (tip[1] + 0.735) / 2)], 2, CHAR, seed=51, taper=0.3)
     if splash:
         for k, (u, v, s) in enumerate(SPLATS):
             splat(ink, *P(u, v), s * W, splash, k)

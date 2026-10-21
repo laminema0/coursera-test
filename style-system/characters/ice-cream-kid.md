@@ -5,20 +5,20 @@
 - **Art**: drawn in code — `episodes/ep02-ice-cream/build.py` → `kid()`
 
 ## Concept
-A small kid who licks an ice cream and is completely unbothered by anything.
+A human child who licks an ice cream and is completely unbothered by anything.
 
-## Silhouette
-- Base shape: **egg/potato**, 1.6 widths tall
-- Signature odd feature: a single **curl of hair** on top like a stalk
-
-## Construction (W = body width, origin top centre)
+## Build — a real human child (not a creature)
 | Part | Rule |
 |---|---|
-| Eyes | small fully open white ovals + dot pupils — blank kid stare (no tired lids, unlike the adults) |
-| Mouth | at (0.2, 0.63): closed line / black oval |
-| Tongue | outlined white tube with a centre line, reaches the middle scoop |
-| T-shirt | neckline + 3 stripes |
-| Prop | waffle cone with 3 scalloped scoops, held with both hands |
+| Head | big round head (0.84W tall) on a short neck — child proportions |
+| Hair | messy wavy cap + fringe, one cowlick sticking up |
+| Ears | C-shaped, on the sides |
+| Eyes | small fully open ovals + dot pupils — blank kid stare |
+| Nose | tiny hook line |
+| Mouth | at (0.07, 0.72): closed line / black oval |
+| Tongue | outlined white tube with centre line, reaches the middle scoop |
+| Body | shoulders + t-shirt with neckline and 3 stripes |
+| Prop | waffle cone with 3 scalloped scoops, both hands on the cone |
 
 ## Acting notes
 - Lick cycle (18 frames, on twos): closed 4 · open 2 · tongue out 2 · tongue up 4 · higher 2 · open 2 · closed 2

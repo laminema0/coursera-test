@@ -29,6 +29,15 @@ Shared DNA (this is what we copy — the *rules*, not the designs):
 | **Scale contrast** | Pair characters with very different heights/shapes (tall vs short, tube vs cone) — in the reference the cone character is about half the tube character's height in wide shots. Close-ups hide the size gap; wides reveal it (a free sight gag). |
 | **No color identity** | Characters are told apart by SHAPE ONLY. |
 
+## 1b. Humans (added v1.3)
+Plain humans are allowed and must still look like this world:
+- Separate round head on a short neck, simple shoulders — but keep the
+  head big and the features tiny and simple (dot eyes, hook nose, line mouth).
+- Hair = one wavy outline cap + fringe, never strands of detail.
+- Same line weights, black + white only, no shading.
+- A creature "in human form" (e.g. Panda) = human body and clothes, but
+  keep the animal head and the animal's black paws/legs.
+
 ## 2. Face kit
 
 ```

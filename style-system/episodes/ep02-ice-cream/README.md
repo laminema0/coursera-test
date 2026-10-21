@@ -5,8 +5,8 @@ happens off-screen — we only hear it and see the splash land on the kid.
 
 | Time | Shot | What happens |
 |---|---|---|
-| 0.0–6.5 | Platform, from behind, slow push-in 1.0→1.3 | Sad man at the very edge; a train rushes past (3.2 s), coat flaps |
-| 6.5–10.5 | Kid CU | Licking the 3-scoop ice cream |
+| 0.0–6.5 | Platform, from behind, slow push-in 1.0→1.3 | Panda (human form, from behind) at the very edge; a train rushes past (3.2 s), coat flaps |
+| 6.5–10.5 | Kid CU | Human child licking the 3-scoop ice cream |
 | 10.5–15.5 | Platform, push-in 1.3→1.6 | Rumble grows, headlight rays from the tunnel, coat flutters |
 | 15.5–24.5 | Kid CU | Horn → thud + SPLASH (16.0) lands on ice cream/kid/wall, brakes, screams, train tries to start twice. Kid keeps licking, one blink |
 | 24.5–28.5 | U-Bahn entrance exterior | Title "ICE CREAM ~ROSENTHALER PLATZ~" |

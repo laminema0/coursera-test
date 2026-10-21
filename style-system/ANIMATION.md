@@ -25,7 +25,11 @@ Ranked by how often it happens:
 6. **Ambient FX** — smoke curls, a fly buzzing, a dripping thing: simple
    2–4 drawing loops in gray line.
 
-Never: walking cycles on screen, camera moves, squash & stretch,
+**Exception — slow push-in** (added v1.2, EP02): for dread/suspense the
+camera may push in slowly (zoom ≤ 1.6× over a shot, eased). Still no pans,
+no shakes, no zoom-outs.
+
+Never: walking cycles on screen, other camera moves, squash & stretch,
 anticipation/overshoot cartoon physics. If a character needs to travel,
 **cut** to them already there.
 

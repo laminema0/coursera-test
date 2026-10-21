@@ -2,6 +2,13 @@
 
 Every approved change to the style system. Newest on top.
 
+## 2026-10-21 — v1.2.0
+- New characters: `sad-man.md`, `ice-cream-kid.md`.
+- ANIMATION.md: slow push-in allowed for dread (EP02).
+- New `tools/sfx.py`: generated sound effects (trains, horn, brakes,
+  splash, slurp, screams, motor). inkline: added letters C F G K W X Y Z.
+- EP02 "Ice Cream": no-dialogue dark comedy, all sound generated.
+
 ## 2026-10-21 — v1.1.0
 - New character: `characters/panda.md` (first test character).
 - DESIGN.md: animal markings may be solid black.

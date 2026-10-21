@@ -2,3 +2,4 @@ __pycache__/
 # personal voice recordings and rendered videos stay out of the public repo
 style-system/episodes/*/voice.*
 style-system/episodes/*/*.mp4
+voice-samples/

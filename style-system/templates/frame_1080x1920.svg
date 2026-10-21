@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1920" viewBox="0 0 1080 1920">
+  <!-- Deadpan Line frame template. Delete the GUIDES group before export. -->
+  <rect width="1080" height="1920" fill="#FFFFFF"/>
+
+  <g id="GUIDES" fill="none" stroke="#00AEEF" stroke-width="2" stroke-dasharray="12 8">
+    <rect x="0" y="595" width="1080" height="725"/>
+    <line x1="60" y1="1345" x2="60" y2="1460"/>
+    <line x1="1020" y1="1345" x2="1020" y2="1460"/>
+    <line x1="0" y1="1345" x2="1080" y2="1345"/>
+    <text x="16" y="585" font-family="Arial" font-size="22" fill="#00AEEF" stroke="none">PICTURE BAND 3:2 (y 595–1320) — art goes here, no border</text>
+    <text x="16" y="1490" font-family="Arial" font-size="22" fill="#00AEEF" stroke="none">SUBTITLE ZONE (top 1345, 2 lines max, 60px side margin)</text>
+    <text x="16" y="250" font-family="Arial" font-size="22" fill="#00AEEF" stroke="none">TITLE CARD ZONE (final shot only)</text>
+    <text x="16" y="1600" font-family="Arial" font-size="22" fill="#00AEEF" stroke="none">TAGLINE ZONE (final shot only)</text>
+  </g>
+
+  <g id="BACKGROUND" stroke="#808080" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <g id="CHARACTERS" stroke="#1A1A1A" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <g id="FILLS" fill="#0D0D0D"/>
+
+  <g id="SUBTITLE" font-family="Arial, Helvetica, 'Liberation Sans', sans-serif" font-size="40" fill="#000" text-anchor="middle">
+    <text x="540" y="1378">Subtitle line one goes here,</text>
+    <text x="540" y="1428">man.</text>
+  </g>
+</svg>

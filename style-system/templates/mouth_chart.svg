@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="320" viewBox="0 0 1200 320">
+  <!-- Standard mouth set M0–M5. Solid black fills, slightly irregular. -->
+  <rect width="1200" height="320" fill="#FFFFFF"/>
+  <g font-family="Arial" font-size="22" fill="#000" text-anchor="middle">
+    <text x="100" y="290">M0 closed</text>
+    <text x="300" y="290">M1 bar</text>
+    <text x="500" y="290">M2 small oval</text>
+    <text x="700" y="290">M3 big blob</text>
+    <text x="900" y="290">M4 slit + tooth</text>
+    <text x="1100" y="290">M5 "oo"</text>
+  </g>
+  <g fill="#0D0D0D" stroke="#1A1A1A" stroke-width="3" stroke-linecap="round">
+    <!-- M0 -->
+    <path d="M88 150 q12 2 24 -1" fill="none"/>
+    <!-- M1 -->
+    <path d="M272 144 q28 -6 56 2 q3 7 -2 12 q-26 -4 -52 2 q-6 -7 -2 -16z"/>
+    <!-- M2 -->
+    <path d="M478 150 q4 -20 26 -18 q22 3 18 20 q-4 18 -24 16 q-22 -2 -20 -18z"/>
+    <!-- M3 -->
+    <path d="M650 152 q2 -38 54 -36 q50 4 48 36 q-4 34 -54 32 q-50 -2 -48 -32z"/>
+    <!-- M4 -->
+    <path d="M860 146 q40 -8 80 2 q2 8 -2 12 q-40 -6 -78 0 q-4 -6 0 -14z"/>
+    <rect x="896" y="147" width="8" height="10" fill="#FFFFFF" stroke="none"/>
+    <!-- M5 -->
+    <path d="M1100 128 q16 0 16 22 q0 22 -16 22 q-16 0 -16 -22 q0 -22 16 -22z M1100 140 q6 0 6 10 q0 10 -6 10 q-6 0 -6 -10 q0 -10 6 -10z" fill-rule="evenodd"/>
+  </g>
+</svg>

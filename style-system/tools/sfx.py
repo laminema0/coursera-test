@@ -1,8 +1,10 @@
-"""sfx — procedural sound effects for Deadpan Line episodes (numpy only).
+"""sfx — sound effects for Deadpan Line episodes: real recordings (load) + procedural fallbacks.
 
 Every function returns a mono float32 array at SR. Mix them into a
 timeline with Track.add(time, sound, gain).
 """
+import os
+import subprocess
 import wave
 
 import numpy as np
@@ -152,6 +154,34 @@ def scream(dur, f0=900, vowel="a", glide=(1.0, 1.25, 0.9)):
     out += 0.15 * band(noise(dur), 1500, 7000)
     e = env_ad(n, 0.06) * np.concatenate([np.ones(n - int(0.3 * n)), np.linspace(1, 0, int(0.3 * n))])
     return norm(out * e)
+
+
+# ---------------------------------------------------------------- real recordings
+SOUNDS = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "sounds")
+
+
+def load(name, tempo=1.0):
+    """Load sounds/<name>.ogg as mono float32 at SR; tempo != 1 time-stretches (pitch kept)."""
+    af = ["-af", f"rubberband=tempo={tempo}"] if tempo != 1.0 else []
+    raw = subprocess.run(["ffmpeg", "-loglevel", "error", "-i", os.path.join(SOUNDS, name + ".ogg"), *af,
+                          "-ac", "1", "-ar", str(SR), "-f", "f32le", "-"], check=True, capture_output=True).stdout
+    return np.frombuffer(raw, np.float32).copy()
+
+
+def pitch(x, ratio):
+    """Resample: ratio > 1 = higher and shorter (tape-style)."""
+    n = int(len(x) / ratio)
+    return np.interp(np.arange(n) * ratio, np.arange(len(x)), x).astype(np.float32)
+
+
+def fade(x, fin=0.0, fout=0.0):
+    x = x.copy()
+    a, b = int(fin * SR), int(fout * SR)
+    if a:
+        x[:a] *= np.linspace(0, 1, a)
+    if b:
+        x[-b:] *= np.linspace(1, 0, b)
+    return x
 
 
 # ---------------------------------------------------------------- mixing

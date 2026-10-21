@@ -91,6 +91,9 @@ Patterns:
 
 ## 6. Sound (for the animatic)
 
+- **Use real recorded sounds** from `sounds/` (credits in
+  `sounds/CREDITS.md`); synthesized effects only as a last resort.
+
 - Natural, mumbled, under-acted voice performance; long pauses are kept.
 - Room tone + one or two diegetic SFX (sizzle, fly buzz, car).
 - No music during scenes; optional short sting under the title card.

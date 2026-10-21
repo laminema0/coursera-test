@@ -20,7 +20,8 @@ comedy shorts in the style of the reference video (frames studied:
 | `templates/mouth_chart.svg` | The 6 standard mouth shapes |
 | `tools/inkline.py` | Code drawing library: wobbly tapered lines, fills, hand lettering |
 | `episodes/ep01-berlinovo-apartment/` | First episode: voice → finished MP4 build script |
-| `tools/sfx.py` | Generated sound effects + mixing (trains, splash, screams, slurps…) |
+| `sounds/` | Real recorded sound effects library + `CREDITS.md` (licences) |
+| `tools/sfx.py` | Load/mix real sounds (+ generated fallbacks) |
 | `episodes/ep02-ice-cream/` | Second episode: no dialogue, all sound generated |
 | `tools/compose_frame.py` | Puts art + subtitle onto a correct 1080×1920 frame |
 | `CHANGELOG.md` | Every approved change to the style, dated |

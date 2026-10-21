@@ -3,7 +3,7 @@
 
     python3 build.py [OUT.mp4]
 
-No dialogue: all sound is generated with ../../tools/sfx.py. Everything
+No dialogue: real recorded sound effects from ../../sounds (credits in sounds/CREDITS.md). Everything
 disturbing happens off-screen — we only hear it and see the splash land.
 """
 import json
@@ -68,35 +68,49 @@ def shot_at(t):
 
 
 # ---------------------------------------------------------------- sound
+SCREAMS = [(16.2, "scream_female1", 1.0, 0.8), (16.35, "scream_1", 1.0, 0.7), (16.6, "scream_female3", 1.05, 0.7),
+           (16.9, "scream_male1", 1.0, 0.6), (17.2, "scream_female2", 0.95, 0.6), (17.5, "scream_2", 1.0, 0.5),
+           (17.9, "scream_old1", 1.0, 0.45), (18.3, "scream_female1", 1.08, 0.4), (18.8, "scream_3", 0.97, 0.35),
+           (19.4, "scream_female3", 0.92, 0.25)]
+
+
 def build_audio(path):
-    sfx.seed(3)
+    """Real recordings from ../../sounds (see sounds/CREDITS.md)."""
+    SR = sfx.SR
     tr = sfx.Track(DURATION)
-    tr.add(0, sfx.ambience(24.5), 0.07)
-    tr.add(24.5, sfx.ambience(4.0) * np.linspace(1, 0, int(4.0 * sfx.SR)), 0.05)
-    # train 1 rushes past
-    tr.add(1.2, sfx.rumble(4.6, rise=0.45, fall=0.35), 0.55)
-    tr.add(3.05, sfx.whoosh(1.4), 0.45)
-    tr.add(3.2, sfx.clacks(1.1), 0.3)
+    wind = sfx.fade(sfx.band(sfx.load("wind"), 0, 700), 0.4, 0.4)
+    for t in np.arange(0, 24.5, len(wind) / SR - 0.4):               # station draft
+        tr.add(t, wind, 0.15)
+    # train 1 rushes past: the passby reversed is its approach, then the real passby (cut before it slows)
+    pas = sfx.load("train_passby_slowing")
+    fast = sfx.fade(sfx.pitch(pas[: int(1.6 * SR)], 1.1), 0, 0.6)
+    approach = sfx.fade(sfx.band(pas[: int(2.0 * SR)][::-1], 0, 1500), 1.2, 0)
+    tr.add(TRAIN1 - 0.1 - len(approach) / SR, approach, 0.7)
+    tr.add(TRAIN1 - 0.1, fast, 1.0)
     # licks
+    slurp = sfx.load("slurp")
     for a, b, name in SHOTS:
         if name == "kid":
-            for t in np.arange(a + 8 / FPS, b, len(LICK_CYCLE) / FPS):
-                tr.add(t, sfx.slurp(0.28), 0.22)
-    # train 2 approaches ... and everything happens off-screen
-    tr.add(11.8, sfx.rumble(4.3, rise=0.95, fall=0.0), 0.6)
-    tr.add(15.75, sfx.horn(0.7), 0.45)
-    tr.add(SPLASH - 0.02, sfx.clunk(), 0.6)
-    tr.add(SPLASH, sfx.splash(0.45), 0.7)
-    tr.add(SPLASH + 0.05, sfx.brake_screech(2.8), 0.32)
-    tr.add(SPLASH, sfx.rumble(2.6, rise=0.0, fall=0.9), 0.5)
-    for t, f0, v, d, g in ((16.15, 950, "a", 1.8, 0.33), (16.4, 650, "o", 2.0, 0.28), (16.7, 1150, "e", 1.4, 0.24),
-                           (17.6, 800, "a", 1.6, 0.24), (18.6, 1000, "e", 1.2, 0.2), (19.8, 700, "a", 1.0, 0.14)):
-        tr.add(t, sfx.scream(d, f0, v), g)
-    # the train tries to start again
-    tr.add(19.6, sfx.motor_try(1.3), 0.28)
-    tr.add(20.95, sfx.clunk(), 0.3)
-    tr.add(21.5, sfx.motor_try(1.0, 110, 250), 0.24)
-    tr.add(22.55, sfx.clunk(), 0.25)
+            for k, t in enumerate(np.arange(a + 6 / FPS, b, len(LICK_CYCLE) / FPS)):
+                tr.add(t, sfx.pitch(slurp, (0.92, 1.0, 1.06)[k % 3]), 1.3)
+    # train 2 approaches ... everything happens off-screen
+    slow_app = sfx.load("train_passby_slowing", tempo=0.55)[::-1]
+    slow_app = sfx.fade(sfx.band(slow_app, 0, 1200), 2.0, 0)
+    tr.add(15.95 - len(slow_app) / SR, slow_app, 0.9)
+    tr.add(13.5, sfx.fade(sfx.load("wind"), 1.0, 0.3), 0.35)
+    horn = sfx.load("train_horn_departure")
+    tr.add(15.55, sfx.fade(horn[: int(1.3 * SR)], 0.02, 0.3), 0.7)
+    tr.add(SPLASH - 0.02, sfx.load("crash"), 0.8)
+    splat = sfx.load("splat")
+    tr.add(SPLASH + 0.02, splat, 1.0)
+    tr.add(SPLASH + 0.09, sfx.pitch(splat, 0.85), 0.6)
+    tr.add(SPLASH, pas, 0.7)                                          # the train braking to a stop
+    for t, name, ratio, gain in SCREAMS:
+        tr.add(t, sfx.pitch(sfx.load(name), ratio), gain)
+    # the train tries to start again, twice
+    dep = sfx.load("metro_departure")
+    tr.add(19.6, sfx.fade(dep[: int(1.3 * SR)], 0, 0.2), 0.6)
+    tr.add(21.5, sfx.fade(dep[: int(1.0 * SR)], 0, 0.15), 0.5)
     return tr.write(path)
 
 

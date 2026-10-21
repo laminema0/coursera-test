@@ -2,6 +2,13 @@
 
 Every approved change to the style system. Newest on top.
 
+## 2026-10-21 — v1.5.0
+- New `sounds/` library of **real recorded** sound effects (trains, horn,
+  crash, splat, slurp, wind, 8 human screams) with `sounds/CREDITS.md`.
+- `tools/sfx.py`: `load()`, `pitch()`, `fade()` for real recordings.
+- EP02 audio rebuilt from real recordings instead of synthesized sounds.
+- Rule: prefer real recordings; synthesized sounds only as a fallback.
+
 ## 2026-10-21 — v1.4.0
 - EP02 man is now **Tiger** in human form (new `characters/tiger.md`):
   thin, sad, hat, 3 head stripes + striped tail, kept deliberately simple.

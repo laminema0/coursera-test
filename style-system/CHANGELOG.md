@@ -2,6 +2,9 @@
 
 Every approved change to the style system. Newest on top.
 
+## 2026-10-21 — v1.3.1
+- Panda (human form): thinner, more slumped, brimmed hat with ears poking out.
+
 ## 2026-10-21 — v1.3.0
 - EP02: the man on the platform is **Panda in human form**; the kid is a
   **human child**. `sad-man.md` folded into `panda.md`, kid bible rewritten.

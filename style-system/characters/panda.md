@@ -42,12 +42,15 @@ Same Panda, but with a human body. Drawn from behind only so far
 (`episodes/ep02-ice-cream/build.py` → `man_back()`).
 | Part | Rule |
 |---|---|
-| Head | round white head on a human body, black ears; droops 0.025W on each out-breath |
-| Body | long coat with shoulders, turned-up collar, belt, back vent |
-| Arms | coat sleeves (outlined noodles) ending in **black panda paws** |
-| Legs | **black panda legs** and feet under the coat |
+| Build | **thin** — coat only ~0.7 of the body width, narrow sloped shoulders |
+| Head | round white head hanging low on the body; droops 0.025W on each out-breath |
+| Hat | **brimmed hat** (droopy brim, pinched crown, black band); panda ears poke out under the brim |
+| Body | long coat, turned-up collar, belt, back vent |
+| Arms | thin coat sleeves ending in **black panda paws** |
+| Legs | thin **black panda legs** and feet under the coat |
 | Mood | sad, slumped, silent |
 
 ## Change log
+- 2026-10-21 — human form made thin and sad, with a hat
 - 2026-10-21 — human form added (EP02: the man on the platform is Panda)
 - 2026-10-21 — created for EP01
